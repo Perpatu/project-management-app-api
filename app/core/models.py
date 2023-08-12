@@ -8,6 +8,8 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 
+from phonenumber_field.modelfields import PhoneNumberField
+
 
 class UserManager(BaseUserManager):
     """Manager for user"""
@@ -42,3 +44,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
+
+
+class Client(models.Model):
+    """Client Model"""
+    name = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(max_length=255, blank=True)
+    phone_number = PhoneNumberField(blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    date_add = models.DateField(auto_now_add=True)
+    color = models.CharField(max_length=30, blank=True)
+
+    def __str__(self) -> str:
+        return self.name
