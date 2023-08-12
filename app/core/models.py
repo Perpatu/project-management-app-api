@@ -8,6 +8,7 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 
+from django.core.validators import MinValueValidator, MaxValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -48,6 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Client(models.Model):
     """Client Model"""
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     email = models.EmailField(max_length=255, blank=True)
     phone_number = PhoneNumberField(blank=True)
@@ -57,3 +59,44 @@ class Client(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Project(models.Model):
+    """Project Model"""
+    priority_choice = [
+        ('High', 'High'),
+        ('Normal', 'Normal'),
+        ('Low', 'Low')
+    ]
+
+    status_choice = [
+        ('In design', 'In design'),
+        ('Started', 'Started'),
+        ('Completed', 'Completed'),
+        ('Suspended', 'Suspended')
+    ]
+
+    id = models.AutoField(primary_key=True)
+    manager = models.ForeignKey(User, on_delete=models.CASCADE)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    start = models.DateField(blank=False)
+    deadline = models.DateField(blank=False)
+    progress = models.PositiveIntegerField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100)
+        ]
+    )
+    priority = models.CharField(max_length=20, choices=priority_choice)
+    status = models.CharField(
+        max_length=20,
+        default='In design',
+        choices=status_choice
+    )
+    number = models.CharField(max_length=255, blank=False)
+    secretariat = models.BooleanField(default=True)
+    invoiced = models.CharField(max_length=30, default='NO')
+
+    def __str__(self) -> str:
+        return self.number

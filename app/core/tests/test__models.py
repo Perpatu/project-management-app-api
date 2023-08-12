@@ -52,7 +52,6 @@ class ModelTests(TestCase):
 
     def test_create_client(self):
         """Test creating client is successful"""
-
         client = models.Client.objects.create(
             name='Test name client',
             email='clien@example.com',
@@ -61,3 +60,29 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(client), client.name)
+
+    def test_create_project(self):
+        """Test creating project is successful"""
+        user = get_user_model().objects.create_superuser(
+            'test@example.com',
+            'testpass123',
+        )
+        client = models.Client.objects.create(
+            name='Test name client',
+            email='clien@example.com',
+            phone_number='147852369',
+            address='Test street 56',
+        )
+        project = models.Project.objects.create(
+            manager=user,
+            client=client,
+            start='2023-09-12',
+            deadline='2023-09-12',
+            progress=25,
+            priority='Low',
+            status='In design',
+            number='test 5876-78',
+            invoiced=False
+        )
+
+        self.assertEqual(str(project), project.number)
