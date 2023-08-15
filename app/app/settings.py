@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'phonenumber_field',
     'django_phonenumbers',
-    'user'
+    'user',
+    'project'
 ]
 
 MIDDLEWARE = [

@@ -49,7 +49,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Client(models.Model):
     """Client Model"""
-    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     email = models.EmailField(max_length=255, blank=True)
     phone_number = PhoneNumberField(blank=True)
@@ -76,8 +75,10 @@ class Project(models.Model):
         ('Suspended', 'Suspended')
     ]
 
-    id = models.AutoField(primary_key=True)
-    manager = models.ForeignKey(User, on_delete=models.CASCADE)
+    manager = models.ForeignKey(
+        User,
+        # limit_choices_to={'is_staff': True},
+        on_delete=models.CASCADE)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
     start = models.DateField(blank=False)
     deadline = models.DateField(blank=False)
