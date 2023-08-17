@@ -75,10 +75,7 @@ class Project(models.Model):
         ('Suspended', 'Suspended')
     ]
 
-    manager = models.ForeignKey(
-        User,
-        # limit_choices_to={'is_staff': True},
-        on_delete=models.CASCADE)
+    manager = models.ForeignKey(User, on_delete=models.CASCADE)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
     start = models.DateField(blank=False)
     deadline = models.DateField(blank=False)
@@ -101,3 +98,18 @@ class Project(models.Model):
 
     def __str__(self) -> str:
         return self.number
+
+
+class CommentProject(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    project = models.ForeignKey(
+        Project,
+        related_name='comments',
+        on_delete=models.CASCADE
+    )
+    text = models.TextField(blank=False)
+    date_posted = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
+
+    def __str__(self) -> str:
+        return self.text

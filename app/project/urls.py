@@ -15,13 +15,18 @@ from project import views
 router = DefaultRouter()
 router.register(
     'projects-admin',
-    views.ProjectViewAdminSet,
+    views.ProjectAdminViewSet,
     basename='project-admin'
 )
 router.register(
     'projects-employee',
-    views.ProjectViewEmployeeSet,
+    views.ProjectEmployeeViewSet,
     basename='project-employee'
+)
+router.register(
+    'comments',
+    views.CommentProjectViewSet,
+    basename='comments'
 )
 
 app_name = 'project'

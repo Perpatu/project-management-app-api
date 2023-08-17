@@ -7,6 +7,11 @@ from django.contrib.auth import get_user_model
 from core import models
 
 
+def create_user(email='test@example.com', password='testpass123'):
+    """Create and return a new user"""
+    return get_user_model().objects.create_user(email, password)
+
+
 class ModelTests(TestCase):
     """Test models"""
 
@@ -63,14 +68,12 @@ class ModelTests(TestCase):
 
     def test_create_project(self):
         """Test creating project is successful"""
-        user = get_user_model().objects.create_superuser(
-            'test@example.com',
-            'testpass123',
-        )
+        user = create_user()
+
         client = models.Client.objects.create(
             name='Test name client',
             email='clien@example.com',
-            phone_number='147852369',
+            phone_number='+1 604 401 1234',
             address='Test street 56',
         )
         project = models.Project.objects.create(
@@ -78,11 +81,34 @@ class ModelTests(TestCase):
             client=client,
             start='2023-09-12',
             deadline='2023-09-12',
-            progress=25,
             priority='Low',
-            status='In design',
             number='test 5876-78',
-            invoiced=False
         )
 
         self.assertEqual(str(project), project.number)
+
+    def test_create_commentPtoject(self):
+        """Test creating commentPtoject is successful"""
+        user = create_user()
+        client = models.Client.objects.create(
+            name='Test name client',
+            email='clien@example.com',
+            phone_number='+1 604 401 1234',
+            address='Test street 56',
+        )
+        project = models.Project.objects.create(
+            manager=user,
+            client=client,
+            start='2023-09-12',
+            deadline='2023-09-12',
+            priority='Low',
+            number='test 5876-78',
+        )
+        commentProject = models.CommentProject.objects.create(
+           user=user,
+           project=project,
+           text="Neque porro quisquam est qui dolorem ipsum \n"
+                "quia dolor sit amet, consectetur, adipisci velit...",
+        )
+
+        self.assertEqual(str(commentProject), commentProject.text)

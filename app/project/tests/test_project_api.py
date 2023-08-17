@@ -99,7 +99,7 @@ class PrivateNotAdminProjectTests(TestCase):
         payload = {
             'manager': self.user,
             'client': client_obj,
-            'start': '2023-08-15',
+            'start': '2023-08-19',
             'deadline': '2023-10-15',
             'priority': 'In design',
             'number': 'Test number project',
@@ -196,6 +196,7 @@ class PrivateAdminProjectTests(TestCase):
 
         payload = {'number': 'Test number project 213e'}
         url = detail_admin_url(project.id)
+
         res = self.client.patch(url, payload)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
