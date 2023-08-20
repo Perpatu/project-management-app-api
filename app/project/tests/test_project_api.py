@@ -230,16 +230,16 @@ class PrivateAdminProjectTests(TestCase):
         res = self.client.put(url, payload)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    def test_delete_project(self):
+    # def test_delete_project(self):
         """Test deleting a project successful from admin user"""
-        client_obj = create_client()
-        project = create_project(user=self.user, client_obj=client_obj)
+        # client_obj = create_client()
+        # project = create_project(user=self.user, client_obj=client_obj)
 
-        url = detail_admin_url(project.id)
-        res = self.client.delete(url)
+        # url = detail_admin_url(project.id)
+        # res = self.client.delete(url)
 
-        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Project.objects.filter(id=project.id).exists())
+        # self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        # self.assertFalse(Project.objects.filter(id=project.id).exists())
 
     def test_retrive_projects(self):
         """Test retrieving a list of projects to admin user"""

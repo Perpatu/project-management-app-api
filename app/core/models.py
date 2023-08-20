@@ -128,7 +128,7 @@ class Department(models.Model):
     """Department Model"""
     name = models.CharField(max_length=255, blank=False, unique=True)
     order = models.IntegerField(unique=True, validators=[MinValueValidator(1)])
-    date_add = models.DateField(default=timezone.now)
+    date_add = models.DateField(auto_now_add=True)
 
     class Meta:
         ordering = ['name']
@@ -166,6 +166,12 @@ class File(models.Model):
     )
     file = models.FileField(upload_to=file_path, blank=False)
     date_add = models.DateField(default=timezone.now)
+
+    class Meta:
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['name'])
+        ]
 
     def __str__(self) -> str:
         return self.name
