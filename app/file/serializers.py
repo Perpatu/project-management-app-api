@@ -13,7 +13,7 @@ def validate_file_extension(file_extension):
     if file_extension in allowed_extensions:
         return True
     else:
-        return False    
+        return False
 
 
 class FilesUploadSerializer(serializers.ModelSerializer):
@@ -54,7 +54,7 @@ class FilesUploadSerializer(serializers.ModelSerializer):
             else:
                 raise serializers.ValidationError('Wrong file format')
         return file_list
-    
+
 
 class FileSerializer(serializers.ModelSerializer):
     """Serializer for file"""

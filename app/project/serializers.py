@@ -8,7 +8,7 @@ from client.serializers import ClientNestedSerializer
 
 from core.models import (
     Project,
-    CommentProject,  
+    CommentProject,
 )
 from file.serializers import FileSerializer
 
