@@ -18,6 +18,11 @@ router.register(
     views.DepartmentAdminViewSet,
     basename='department-admin'
 )
+router.register(
+    'department-employee',
+    views.DepartmentEmployeeViewSet,
+    basename='department-employee'
+)
 
 app_name = 'department'
 
