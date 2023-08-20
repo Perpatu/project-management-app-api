@@ -28,14 +28,6 @@ router.register(
     views.CommentProjectViewSet,
     basename='comments'
 )
-router.register(
-    'files',
-    views.FileAdminViewSet,
-    basename='files'
-)
-
-
-app_name = 'project'
 
 urlpatterns = [
     path('', include(router.urls)),
