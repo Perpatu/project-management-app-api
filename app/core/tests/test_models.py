@@ -87,8 +87,8 @@ class ModelTests(TestCase):
 
         self.assertEqual(str(project), project.number)
 
-    def test_create_commentPtoject(self):
-        """Test creating commentPtoject is successful"""
+    def test_create_commentProject(self):
+        """Test creating commentProject is successful"""
         user = create_user()
         client = models.Client.objects.create(
             name='Test name client',
@@ -112,3 +112,12 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(commentProject), commentProject.text)
+
+    def test_create_department(self):
+        """Test creating department is successful"""
+        department = models.Department.objects.create(
+            name='Test name department',
+            order=1,
+        )
+
+        self.assertEqual(str(department), department.name)

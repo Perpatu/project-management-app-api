@@ -13,18 +13,18 @@ from core.models import Project, Client
 from project.serializers import ProjectSerializer
 
 
-PROJECT_ADMIN_URL = reverse('project:project-admin-list')
-PROJECT_EMPLOYEE_URL = reverse('project:project-employee-list')
+PROJECT_ADMIN_URL = reverse('project:projects-admin-list')
+PROJECT_EMPLOYEE_URL = reverse('project:projects-employee-list')
 
 
 def detail_employee_url(project_id):
     """Create and return a employee project detail URL"""
-    return reverse('project:project-employee-detail', args=[project_id])
+    return reverse('project:projects-employee-detail', args=[project_id])
 
 
 def detail_admin_url(project_id):
     """Create and return a admin project detail URL"""
-    return reverse('project:project-admin-detail', args=[project_id])
+    return reverse('project:projects-admin-detail', args=[project_id])
 
 
 def create_project(user, client_obj, **params):
@@ -228,7 +228,6 @@ class PrivateAdminProjectTests(TestCase):
 
         url = detail_admin_url(project.id)
         res = self.client.put(url, payload)
-
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_delete_project(self):

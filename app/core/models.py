@@ -1,7 +1,10 @@
 """
 db models
 """
+import os
+
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -56,24 +59,34 @@ class Client(models.Model):
     date_add = models.DateField(auto_now_add=True)
     color = models.CharField(max_length=30, blank=True)
 
+    class Meta:
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['name'])
+        ]
+
     def __str__(self) -> str:
         return self.name
 
 
 class Project(models.Model):
     """Project Model"""
-    priority_choice = [
-        ('High', 'High'),
-        ('Normal', 'Normal'),
-        ('Low', 'Low')
-    ]
 
-    status_choice = [
-        ('In design', 'In design'),
-        ('Started', 'Started'),
-        ('Completed', 'Completed'),
-        ('Suspended', 'Suspended')
-    ]
+    class ProjectStatus(models.TextChoices):
+        IN_DESIGN = 'In design'
+        STARTED = 'Started'
+        COMPLETED = 'Completed'
+        SUSPENDDED = 'Suspended'
+
+    class InvoiceStatus(models.TextChoices):
+        YES = 'YES'
+        LACK_OF_INVOICE = 'YES (LACK OF INVOICE)'
+        NO = 'NO'
+
+    class Priority(models.TextChoices):
+        HIGH = 'High'
+        NORMAL = 'Normal'
+        LOW = 'Low'
 
     manager = models.ForeignKey(User, on_delete=models.CASCADE)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
@@ -86,21 +99,80 @@ class Project(models.Model):
             MaxValueValidator(100)
         ]
     )
-    priority = models.CharField(max_length=20, choices=priority_choice)
+    priority = models.CharField(max_length=20, choices=Priority.choices)
     status = models.CharField(
         max_length=20,
         default='In design',
-        choices=status_choice
+        choices=ProjectStatus.choices
     )
     number = models.CharField(max_length=255, blank=False)
     secretariat = models.BooleanField(default=True)
-    invoiced = models.CharField(max_length=30, default='NO')
+    invoiced = models.CharField(
+        max_length=30,
+        default='NO',
+        choices=InvoiceStatus.choices
+    )
+    date_add = models.DateField(default=timezone.now)
+
+    class Meta:
+        ordering = ['deadline']
+        indexes = [
+            models.Index(fields=['deadline'])
+        ]
 
     def __str__(self) -> str:
         return self.number
 
 
+class Department(models.Model):
+    """Department Model"""
+    name = models.CharField(max_length=255, blank=False, unique=True)
+    order = models.IntegerField(unique=True, validators=[MinValueValidator(1)])
+    date_add = models.DateField(default=timezone.now)
+
+    class Meta:
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['name'])
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class File(models.Model):
+    """File model"""
+    class Destiny(models.TextChoices):
+        PROJECT = 'Project'
+        SECRETARIAT = 'Secretariat'
+
+    def file_path(instance, filename):
+        """Generate file path"""
+        ext = os.path.splitext(filename)[1]
+        filename = os.path.splitext(filename)[0] + ext
+        return os.path.join('uploads', str(instance.project), filename)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    project = models.ForeignKey(
+        Project,
+        related_name='files',
+        on_delete=models.CASCADE
+    )
+    name = models.CharField(max_length=255)
+    destiny = models.CharField(
+        max_length=30,
+        blank=False,
+        choices=Destiny.choices
+    )
+    file = models.FileField(upload_to=file_path, blank=False)
+    date_add = models.DateField(default=timezone.now)
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class CommentProject(models.Model):
+    """Comment to Project Model"""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(
         Project,
@@ -108,8 +180,14 @@ class CommentProject(models.Model):
         on_delete=models.CASCADE
     )
     text = models.TextField(blank=False)
-    date_posted = models.DateTimeField(auto_now_add=True)
+    date_posted = models.DateTimeField(default=timezone.now)
     read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-date_posted']
+        indexes = [
+            models.Index(fields=['-date_posted'])
+        ]
 
     def __str__(self) -> str:
         return self.text

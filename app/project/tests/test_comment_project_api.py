@@ -10,13 +10,18 @@ from rest_framework.test import APIClient
 
 from core.models import CommentProject, Client, Project
 
-from project.serializers import CommentProjectSerializer
+from project.serializers import CommentProjectDisplaySerializer
 
 
 COMMENT_PROJECT_URL = reverse('project:comments-list')
 
 
-def create_user(email='test@example.com', password='testpass123'):
+def detail_comment_url(comment_id):
+    """Create and return a comment detail url."""
+    return reverse('project:comments-detail', args=[comment_id])
+
+
+def create_user(email='user@example.com', password='testpass123'):
     """Create and return a new user"""
     return get_user_model().objects.create_user(email, password)
 
@@ -95,6 +100,57 @@ class PrivateCommentProjectApiTests(TestCase):
         res = self.client.get(COMMENT_PROJECT_URL)
 
         comments = CommentProject.objects.all().order_by('date_posted')
-        serializer = CommentProjectSerializer(comments, many=True)
+        serializer = CommentProjectDisplaySerializer(comments, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
+
+    def test_comments_limited_to_user(self):
+        """Test list of tags is limited to authenticated user"""
+        user2 = create_user(email='user2@example.com')
+        project = create_project(user=self.user)
+        CommentProject.objects.create(
+            user=user2,
+            project=project,
+            text='Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
+        )
+        comment = CommentProject.objects.create(
+            user=self.user,
+            project=project,
+            text='Nullam et enim blandit, mattis magna quis.'
+        )
+
+        res = self.client.get(COMMENT_PROJECT_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]['text'], comment.text)
+        self.assertEqual(res.data[0]['id'], comment.id)
+
+    def test_delete_comment(self):
+        """Test deleting comment"""
+        project = create_project(user=self.user)
+        comment = CommentProject.objects.create(
+            user=self.user,
+            project=project,
+            text='Nullam et enim blandit, mattis magna quis.'
+        )
+
+        url = detail_comment_url(comment.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        comments = CommentProject.objects.filter(id=comment.id)
+        self.assertFalse(comments.exists())
+
+    def test_create_comment(self):
+        """Test creating project from admin user"""
+        project = create_project(user=self.user)
+        payload = {
+            'user': self.user.id,
+            'project': project.id,
+            'text': 'Nullam et enim blandit, mattis magna quis.',
+        }
+
+        res = self.client.post(COMMENT_PROJECT_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)

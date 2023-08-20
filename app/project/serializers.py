@@ -9,10 +9,21 @@ from client.serializers import ClientNestedSerializer
 from core.models import (
     Project,
     CommentProject,
+    File
 )
 
 
-class CommentProjectSerializer(serializers.ModelSerializer):
+def validate_file_extension(file_extension):
+    allowed_extensions = ['pdf', 'dxf', 'xlsx', 'xls', 'txt', 'png',
+                          'jpg', 'jpeg', 'rar', 'zip', 'doc', 'docx',
+                          'igs', 'step', 'stp', 'stl']
+    if file_extension in allowed_extensions:
+        return True
+    else:
+        return False
+
+
+class CommentProjectDisplaySerializer(serializers.ModelSerializer):
     """Serializer for comment project"""
 
     class Meta:
@@ -27,6 +38,62 @@ class CommentProjectSerializer(serializers.ModelSerializer):
             'name': UserNestedSerializer(instance.user).data['name']
         }
         return response
+
+
+class CommentProjectManageSerializer(serializers.ModelSerializer):
+    """Serializer Manage for comment project"""
+
+    class Meta:
+        model = CommentProject
+        fields = ['id', 'user', 'project', 'text']
+        read_only_fields = ['id']
+
+
+class FilesUploadSerializer(serializers.ModelSerializer):
+    """Serializer for upload file"""
+    file = serializers.ListField(
+        child=serializers.FileField(
+            max_length=100000,
+            allow_empty_file=False,
+            use_url=False
+        ))
+
+    class Meta:
+        model = File
+        fields = '__all__'
+
+        extra_kwargs = {
+            'name': {'required': False},
+        }
+
+    def create(self, validated_data):
+        project = validated_data['project']
+        user = validated_data['user']
+        destiny = validated_data['destiny']
+        file = validated_data.pop('file')
+        file_list = []
+
+        for file in file:
+            file_name_str = str(file).lower()
+            file_split = file_name_str.split('.')
+            file_extension = file_split[-1]
+            if validate_file_extension(file_extension):
+                file_obj = File.objects.create(
+                    file=file, project=project, user=user,
+                    destiny=destiny, name=file.name
+                )
+                fileurl = f'{file_obj.file.url}'
+                file_list.append(fileurl)
+            else:
+                raise serializers.ValidationError('Wrong file format')
+        return file_list
+
+
+class FileSerializer(serializers.ModelSerializer):
+    """Serializer for file"""
+    class Meta:
+        model = File
+        fields = '__all__'
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -64,7 +131,8 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class ProjectDetailSerializer(ProjectSerializer):
     """Serializer for recipe detail view."""
-    comments = CommentProjectSerializer(many=True)
+    comments = CommentProjectDisplaySerializer(many=True)
+    files = FileSerializer(many=True)
 
     class Meta(ProjectSerializer.Meta):
-        fields = ProjectSerializer.Meta.fields + ['comments']
+        fields = ProjectSerializer.Meta.fields + ['comments', 'files']

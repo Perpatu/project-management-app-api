@@ -16,18 +16,24 @@ router = DefaultRouter()
 router.register(
     'projects-admin',
     views.ProjectAdminViewSet,
-    basename='project-admin'
+    basename='projects-admin'
 )
 router.register(
     'projects-employee',
     views.ProjectEmployeeViewSet,
-    basename='project-employee'
+    basename='projects-employee'
 )
 router.register(
     'comments',
     views.CommentProjectViewSet,
     basename='comments'
 )
+router.register(
+    'files',
+    views.FileAdminViewSet,
+    basename='files'
+)
+
 
 app_name = 'project'
 
