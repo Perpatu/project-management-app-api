@@ -41,7 +41,9 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """User in the system"""
     email = models.EmailField(max_length=255, unique=True)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=True)
+    first_name = models.CharField(max_length=255, blank=True)
+    last_name = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -150,7 +152,11 @@ class File(models.Model):
         """Generate file path"""
         ext = os.path.splitext(filename)[1]
         filename = os.path.splitext(filename)[0] + ext
-        return os.path.join('uploads', str(instance.project), filename)
+        return os.path.join(
+            'uploads/projects',
+            str(instance.project.id),
+            filename
+        )
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(
@@ -177,11 +183,56 @@ class File(models.Model):
         return self.name
 
 
+class QueueLogic(models.Model):
+    """QueueLogic model"""
+    file = models.ForeignKey(
+        File,
+        related_name='queue',
+        on_delete=models.CASCADE
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.CASCADE
+    )
+    chosen = models.BooleanField(default=False)
+    start = models.BooleanField(default=False)
+    paused = models.BooleanField(default=False)
+    end = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['department']
+        indexes = [
+            models.Index(fields=['department'])
+        ]
+
+
 class CommentProject(models.Model):
     """Comment to Project Model"""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(
         Project,
+        related_name='comments',
+        on_delete=models.CASCADE
+    )
+    text = models.TextField(blank=False)
+    date_posted = models.DateTimeField(default=timezone.now)
+    read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-date_posted']
+        indexes = [
+            models.Index(fields=['-date_posted'])
+        ]
+
+    def __str__(self) -> str:
+        return self.text
+
+
+class CommentFile(models.Model):
+    """Comment to File Model"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    file = models.ForeignKey(
+        File,
         related_name='comments',
         on_delete=models.CASCADE
     )

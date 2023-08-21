@@ -29,6 +29,8 @@ router.register(
     basename='comments'
 )
 
+app_name = 'project'
+
 urlpatterns = [
     path('', include(router.urls)),
 ]

@@ -3,7 +3,8 @@ Serializers for files APIs
 """
 from rest_framework import serializers
 
-from core.models import File
+from core.models import File, CommentFile, QueueLogic
+from user.serializers import UserNestedSerializer
 
 
 def validate_file_extension(file_extension):
@@ -56,8 +57,67 @@ class FilesUploadSerializer(serializers.ModelSerializer):
         return file_list
 
 
-class FileSerializer(serializers.ModelSerializer):
-    """Serializer for file"""
+class CommentFileDisplaySerializer(serializers.ModelSerializer):
+    """Serializer for comment project"""
+
+    class Meta:
+        model = CommentFile
+        fields = ['id', 'user', 'text', 'date_posted', 'read']
+        read_only_fields = ['id', 'user', 'date_posted']
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        first_name = UserNestedSerializer(instance.user).data['first_name']
+        last_name = UserNestedSerializer(instance.user).data['last_name']
+        response['user'] = {
+            'id': UserNestedSerializer(instance.user).data['id'],
+            'name': first_name + ' ' + last_name
+        }
+        return response
+
+
+class CommentFileManageSerializer(serializers.ModelSerializer):
+    """Serializer Manage for comment file"""
+
+    class Meta:
+        model = CommentFile
+        fields = ['id', 'user', 'file', 'text']
+        read_only_fields = ['id']
+
+
+class QueueLogicManageSerializer(serializers.ModelSerializer):
+    """Serializer for manage queue logic"""
+
+    class Meta:
+        model = QueueLogic
+        fields = '__all__'
+        read_only_fields = ['id']
+
+
+class QueueLogicToFileSerializer(serializers.ModelSerializer):
+    """Serializer for queue logic in File"""
+
+    class Meta:
+        model = QueueLogic
+        exclude = ['file',]
+        read_only_fields = ['id']
+
+
+class FileProjectSerializer(serializers.ModelSerializer):
+    """Serializer for file in project"""
+    comments = CommentFileDisplaySerializer(many=True)
+    queue = QueueLogicToFileSerializer(many=True)
+
     class Meta:
         model = File
-        fields = '__all__'
+        fields = ['id', 'name', 'file', 'comments', 'queue']
+        read_only_fields = ['id']
+
+
+class FileManageSerializer(serializers.ModelSerializer):
+    """Serializer for manage file"""
+
+    class Meta:
+        model = File
+        fields = ['id', 'name', 'file', 'destiny', 'queue']
+        read_only_fields = ['id']

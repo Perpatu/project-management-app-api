@@ -12,17 +12,26 @@ from core import models
 class UserAdmin(BaseUserAdmin):
     """Define the admin pages for users"""
     ordering = ['id']
-    list_display = ['email', 'name']
+    list_display = ['email', 'first_name', 'last_name', 'name']
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         (
             _('Permissons'),
             {
                 'fields': (
-                    'name',
                     'is_active',
                     'is_staff',
                     'is_superuser',
+                )
+            }
+        ),
+        (
+            _('About user'),
+            {
+                'fields': (
+                    'name',
+                    'first_name',
+                    'last_name',
                 )
             }
         ),
@@ -49,5 +58,7 @@ admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Client)
 admin.site.register(models.Project)
 admin.site.register(models.CommentProject)
+admin.site.register(models.CommentFile)
 admin.site.register(models.File)
+admin.site.register(models.QueueLogic)
 admin.site.register(models.Department)

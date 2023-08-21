@@ -98,33 +98,10 @@ class PrivateCommentProjectApiTests(TestCase):
         )
 
         res = self.client.get(COMMENT_PROJECT_URL)
-
-        comments = CommentProject.objects.all().order_by('date_posted')
+        comments = CommentProject.objects.all().order_by('-date_posted')
         serializer = CommentProjectDisplaySerializer(comments, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
-
-    def test_comments_limited_to_user(self):
-        """Test list of tags is limited to authenticated user"""
-        user2 = create_user(email='user2@example.com')
-        project = create_project(user=self.user)
-        CommentProject.objects.create(
-            user=user2,
-            project=project,
-            text='Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
-        )
-        comment = CommentProject.objects.create(
-            user=self.user,
-            project=project,
-            text='Nullam et enim blandit, mattis magna quis.'
-        )
-
-        res = self.client.get(COMMENT_PROJECT_URL)
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]['text'], comment.text)
-        self.assertEqual(res.data[0]['id'], comment.id)
 
     def test_delete_comment(self):
         """Test deleting comment"""

@@ -16,6 +16,16 @@ router.register(
     views.FileAdminViewSet,
     basename='files-admin'
 )
+router.register(
+    'comments',
+    views.FileAdminViewSet,
+    basename='comments'
+)
+router.register(
+    'queue-logic',
+    views.QueueLogicViewSet,
+    basename='queue-logic'
+)
 
 app_name = 'file'
 

@@ -10,7 +10,7 @@ from core.models import (
     Project,
     CommentProject,
 )
-from file.serializers import FileSerializer
+from file.serializers import FileProjectSerializer
 
 
 class CommentProjectDisplaySerializer(serializers.ModelSerializer):
@@ -23,9 +23,11 @@ class CommentProjectDisplaySerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
+        first_name = UserNestedSerializer(instance.user).data['first_name']
+        last_name = UserNestedSerializer(instance.user).data['last_name']
         response['user'] = {
             'id': UserNestedSerializer(instance.user).data['id'],
-            'name': UserNestedSerializer(instance.user).data['name']
+            'name': first_name + ' ' + last_name
         }
         return response
 
@@ -61,21 +63,23 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
+        first_name = UserNestedSerializer(instance.manager).data['first_name']
+        last_name = UserNestedSerializer(instance.manager).data['last_name']
         response['manager'] = {
             'id': UserNestedSerializer(instance.manager).data['id'],
-            'name': UserNestedSerializer(instance.manager).data['name']
+            'name': first_name + ' ' + last_name
         }
         response['client'] = {
             'id': ClientNestedSerializer(instance.client).data['id'],
-            'name': ClientNestedSerializer(instance.client).data['name']
+            'name': ClientNestedSerializer(instance.client).data['name'],
         }
         return response
 
 
 class ProjectDetailSerializer(ProjectSerializer):
-    """Serializer for recipe detail view."""
+    """Serializer for project detail view."""
     comments = CommentProjectDisplaySerializer(many=True)
-    files = FileSerializer(many=True)
+    files = FileProjectSerializer(many=True)
 
     class Meta(ProjectSerializer.Meta):
         fields = ProjectSerializer.Meta.fields + ['comments', 'files']
