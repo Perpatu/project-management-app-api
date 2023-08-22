@@ -195,6 +195,7 @@ class QueueLogic(models.Model):
         on_delete=models.CASCADE
     )
     chosen = models.BooleanField(default=False)
+    permission = models.BooleanField(default=False)
     start = models.BooleanField(default=False)
     paused = models.BooleanField(default=False)
     end = models.BooleanField(default=False)

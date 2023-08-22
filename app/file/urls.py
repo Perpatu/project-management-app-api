@@ -18,7 +18,7 @@ router.register(
 )
 router.register(
     'comments',
-    views.FileAdminViewSet,
+    views.CommentFileViewSet,
     basename='comments'
 )
 router.register(

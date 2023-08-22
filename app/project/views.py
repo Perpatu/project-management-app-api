@@ -31,6 +31,7 @@ class ProjectAdminViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def destroy(self, request, *args, **kwargs):
+        """Delete project object in db and folder with files on server"""
         project = self.get_object()
         dir_path = MEDIA_ROOT + '/uploads/projects/' + str(project.id) + '/'
         if os.path.isdir(dir_path):

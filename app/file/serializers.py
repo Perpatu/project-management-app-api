@@ -8,8 +8,9 @@ from user.serializers import UserNestedSerializer
 
 
 def validate_file_extension(file_extension):
-    allowed_extensions = ['pdf', 'dxf', 'xlsx', 'xls', 'txt', 'png',
-                          'jpg', 'jpeg', 'rar', 'zip', 'doc', 'docx',
+    allowed_extensions = ['pdf', 'dxf', 'xlsx', 'xls',
+                          'txt', 'png', 'jpg', 'jpeg',
+                          'rar', 'zip', 'doc', 'docx',
                           'igs', 'step', 'stp', 'stl']
     if file_extension in allowed_extensions:
         return True
@@ -93,6 +94,19 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id']
 
+    def to_internal_value(self, data):
+        response = super().to_internal_value(data)
+        file = File.objects.filter(id=response['file'].id).first()
+        serializer_file = FileProjectSerializer(file, many=False)
+        data = serializer_file.data
+        deps_id = []
+        for dep in data['queue']:
+            deps_id.append(dep['department'])
+        if response['department'].id in deps_id:
+            raise ValueError('Queue with this department exist')
+        else:
+            return response
+
 
 class QueueLogicToFileSerializer(serializers.ModelSerializer):
     """Serializer for queue logic in File"""
@@ -112,6 +126,28 @@ class FileProjectSerializer(serializers.ModelSerializer):
         model = File
         fields = ['id', 'name', 'file', 'comments', 'queue']
         read_only_fields = ['id']
+
+
+class FileDepartmentSerializer(serializers.ModelSerializer):
+    """Serializer for file in department"""
+    comments = CommentFileDisplaySerializer(many=True)
+    queue = QueueLogicToFileSerializer(many=True)
+
+    class Meta:
+        model = File
+        fields = ['id', 'name', 'file', 'comments', 'queue']
+        read_only_fields = ['id']
+
+    def to_representation(self, instance):
+        """deleting all unnecessary QueueLogic"""
+        response = super().to_representation(instance)
+        dep_id = self.context.get('dep_id')
+        queue_list = []
+        for queue in response['queue']:
+            if queue['department'] == dep_id:
+                queue_list.append(queue)
+        response['queue'] = queue_list
+        return response
 
 
 class FileManageSerializer(serializers.ModelSerializer):
