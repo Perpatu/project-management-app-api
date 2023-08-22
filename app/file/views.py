@@ -6,6 +6,11 @@ from rest_framework import (
     viewsets,
     mixins,
 )
+from django.contrib.postgres.search import (
+    SearchVector,
+    SearchQuery,
+    SearchRank
+)
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -52,7 +57,7 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
 
     @action(methods=['GET'], detail=False, url_path='departments')
     def department_view(self, request):
-        """Files assinged for department"""
+        """Files assinged for department add params dep_id to url"""
         dep_id = self.request.query_params.get('dep_id')
         dep_id_int = int(dep_id)
         queryset = self.queryset.filter(queue__department__in=[dep_id_int])
@@ -60,6 +65,17 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
             queryset, many=True, context={'dep_id': dep_id_int}
         )
         return Response(serializer.data)
+
+    @action(methods=['GET'], detail=False, url_path='search')
+    def file_search_view(self, request):
+        query = self.request.query_params.get('search')
+        search_vector = SearchVector('name', weight='B') + \
+                        SearchVector('file', weight="A")
+        search_query = SearchQuery(query)
+        result = File.objects.annotate(
+            search=search_vector, rank=SearchRank(search_vector, search_query)).filter(rank__gte=0.3).order_by('-rank')
+        ser = serializers.FileProjectSerializer(result, many=True)
+        return Response(ser.data)
 
 
 class CommentFileViewSet(mixins.CreateModelMixin,

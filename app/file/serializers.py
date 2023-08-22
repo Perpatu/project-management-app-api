@@ -11,7 +11,8 @@ def validate_file_extension(file_extension):
     allowed_extensions = ['pdf', 'dxf', 'xlsx', 'xls',
                           'txt', 'png', 'jpg', 'jpeg',
                           'rar', 'zip', 'doc', 'docx',
-                          'igs', 'step', 'stp', 'stl']
+                          'igs', 'step', 'stp', 'stl',
+                          'mkv', 'mp4',]
     if file_extension in allowed_extensions:
         return True
     else:
@@ -22,7 +23,7 @@ class FilesUploadSerializer(serializers.ModelSerializer):
     """Serializer for upload file"""
     file = serializers.ListField(
         child=serializers.FileField(
-            max_length=100000,
+            max_length=10000000000000,
             allow_empty_file=False,
             use_url=False
         ))
@@ -103,7 +104,9 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
         for dep in data['queue']:
             deps_id.append(dep['department'])
         if response['department'].id in deps_id:
-            raise ValueError('Queue with this department exist')
+            raise serializers.ValidationError(
+                'Queue with this department exist'
+            )
         else:
             return response
 
