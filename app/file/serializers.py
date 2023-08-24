@@ -90,7 +90,7 @@ class CommentFileManageSerializer(serializers.ModelSerializer):
 
 class QueueLogicManageSerializer(serializers.ModelSerializer):
     """Serializer for manage queue logic"""
-    
+
     class Meta:
         model = QueueLogic
         fields = '__all__'
@@ -110,6 +110,7 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
             )
         else:
             return response
+
 
 class DepStatsSerializer(serializers.ModelSerializer):
     """Serializer for stats departments"""

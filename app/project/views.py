@@ -54,34 +54,35 @@ class ProjectAdminViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             return serializers.ProjectDetailSerializer
         return self.serializer_class
-    
+
     @action(methods=['GET'], detail=False, url_path='status')
     def project_admin_status_view(self, request):
         """Project view for admin"""
-        status = self.request.query_params.get('status')        
+        status = self.request.query_params.get('status')
         if status == 'My':
             queryset = self.queryset.filter(manager__id=request.user.id)
             ser = serializers.ProjectSerializer(queryset, many=True)
             return Response(ser.data)
         else:
-            queryset = self.queryset.filter(status=status)            
+            queryset = self.queryset.filter(status=status)
             ser = serializers.ProjectSerializer(queryset, many=True)
             return Response(ser.data)
-    
+
     @action(methods=['GET'], detail=False, url_path='search')
     def project_admin_search_view(self, request):
         """Search project for admin"""
         query = self.request.query_params.get('search')
         project_status = self.request.query_params.get('status')
         search_vector = SearchVector('number', weight='A') + \
-                        SearchVector('manager__last_name', weight='A') + \
-                        SearchVector('client__name', weight='A') + \
-                        SearchVector('deadline', weight="B") + \
-                        SearchVector('priority', weight="C")
+            SearchVector('manager__last_name', weight='A') + \
+            SearchVector('client__name', weight='A') + \
+            SearchVector('deadline', weight="B") + \
+            SearchVector('priority', weight="C")
         search_query = SearchQuery(query)
         result = Project.objects.annotate(
             search=search_vector, rank=SearchRank(search_vector, search_query)
-                ).filter(rank__gte=0.1, status=project_status).order_by('-rank')
+                ).filter(rank__gte=0.1,
+                         status=project_status).order_by('-rank')
         ser = serializers.ProjectSerializer(result, many=True)
         return Response(ser.data)
 
@@ -105,19 +106,19 @@ class ProjectEmployeeViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'retrieve':
             return serializers.ProjectDetailSerializer
         return self.serializer_class
-    
+
     @action(methods=['GET'], detail=False, url_path='status')
     def project_employee_status_view(self, request):
         """Project view for employee"""
         project_status = self.request.query_params.get('status')
         forbidden_status = ['Completed', 'Suspended']
         if project_status not in forbidden_status:
-            queryset = self.queryset.filter(status=project_status)            
+            queryset = self.queryset.filter(status=project_status)
             ser = serializers.ProjectSerializer(queryset, many=True)
             return Response(ser.data)
         info = {'message': 'you do not have permissions'}
         return Response(info, status=status.HTTP_403_FORBIDDEN)
-    
+
     @action(methods=['GET'], detail=False, url_path='search')
     def project_employee_search_view(self, request):
         """Search project for employee"""
@@ -132,13 +133,15 @@ class ProjectEmployeeViewSet(viewsets.ReadOnlyModelViewSet):
                             SearchVector('priority', weight="C")
             search_query = SearchQuery(query)
             result = Project.objects.annotate(
-                search=search_vector, rank=SearchRank(search_vector, search_query)
-                    ).filter(rank__gte=0.1, status=project_status).order_by('-rank')
+                search=search_vector,
+                rank=SearchRank(search_vector, search_query)
+                    ).filter(rank__gte=0.1,
+                             status=project_status).order_by('-rank')
             ser = serializers.ProjectSerializer(result, many=True)
             return Response(ser.data)
         info = {'message': 'you do not have permissions'}
         return Response(info, status=status.HTTP_403_FORBIDDEN)
-    
+
     @action(methods=['GET'], detail=False, url_path='columns')
     def project_employee_columns(self, request):
         """Columns for employee"""
@@ -146,7 +149,7 @@ class ProjectEmployeeViewSet(viewsets.ReadOnlyModelViewSet):
                    'status', 'progress', 'priority']
         return Response(columns)
 
-    
+
 class CommentProjectViewSet(mixins.CreateModelMixin,
                             mixins.DestroyModelMixin,
                             mixins.ListModelMixin,

@@ -74,14 +74,15 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         """
         dep_id = self.request.query_params.get('dep_id')
         dep_id_int = int(dep_id)
-        queryset = self.queryset.filter(queue__department__in=[dep_id_int]).count()
+        queryset = self.queryset.filter(
+            queue__department__in=[dep_id_int]).count()
         return Response(queryset)
 
     @action(methods=['GET'], detail=False, url_path='search')
     def file_search_view(self, request):
         query = self.request.query_params.get('search')
         search_vector = SearchVector('name', weight='B') + \
-                        SearchVector('file', weight="A")
+            SearchVector('file', weight="A")
         search_query = SearchQuery(query)
         result = File.objects.annotate(
             search=search_vector, rank=SearchRank(search_vector, search_query)
