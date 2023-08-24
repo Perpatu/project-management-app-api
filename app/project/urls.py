@@ -14,14 +14,14 @@ from project import views
 
 router = DefaultRouter()
 router.register(
-    'projects-admin',
+    'admin',
     views.ProjectAdminViewSet,
-    basename='projects-admin'
+    basename='admin'
 )
 router.register(
-    'projects-employee',
+    'auth',
     views.ProjectEmployeeViewSet,
-    basename='projects-employee'
+    basename='auth'
 )
 router.register(
     'comments',

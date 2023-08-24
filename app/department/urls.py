@@ -14,14 +14,14 @@ from department import views
 
 router = DefaultRouter()
 router.register(
-    'department-admin',
+    'admin',
     views.DepartmentAdminViewSet,
-    basename='department-admin'
+    basename='admin'
 )
 router.register(
-    'department-employee',
+    'auth',
     views.DepartmentEmployeeViewSet,
-    basename='department-employee'
+    basename='auth'
 )
 router.register(
     'stats',

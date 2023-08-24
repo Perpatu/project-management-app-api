@@ -13,18 +13,18 @@ from core.models import Project, Client
 from project.serializers import ProjectSerializer
 
 
-PROJECT_ADMIN_URL = reverse('project:projects-admin-list')
-PROJECT_EMPLOYEE_URL = reverse('project:projects-employee-list')
+PROJECT_ADMIN_URL = reverse('project:admin-list')
+PROJECT_EMPLOYEE_URL = reverse('project:auth-list')
 
 
 def detail_employee_url(project_id):
     """Create and return a employee project detail URL"""
-    return reverse('project:projects-employee-detail', args=[project_id])
+    return reverse('project:auth-detail', args=[project_id])
 
 
 def detail_admin_url(project_id):
     """Create and return a admin project detail URL"""
-    return reverse('project:projects-admin-detail', args=[project_id])
+    return reverse('project:admin-detail', args=[project_id])
 
 
 def create_project(user, client_obj, **params):

@@ -12,9 +12,9 @@ from file import views
 
 router = DefaultRouter()
 router.register(
-    'files-admin',
+    'admin',
     views.FileAdminViewSet,
-    basename='files-admin'
+    basename='admin'
 )
 router.register(
     'comments',

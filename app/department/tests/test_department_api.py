@@ -13,21 +13,21 @@ from core.models import Department
 from department.serializers import DepartmentSerializer
 
 
-DEPARTMENT_ADMIN_URL = reverse('department:department-admin-list')
-DEPARTMENT_EMPLOYEE_URL = reverse('department:department-employee-list')
+DEPARTMENT_ADMIN_URL = reverse('department:admin-list')
+DEPARTMENT_EMPLOYEE_URL = reverse('department:auth-list')
 
 
 def detail_employee_url(department_id):
     """Create and return a employee department detail URL"""
     return reverse(
-        'department:department-employee-detail', args=[department_id]
+        'department:auth-detail', args=[department_id]
     )
 
 
 def detail_admin_url(department_id):
     """Create and return a admin department detail URL"""
     return reverse(
-        'department:department-admin-detail', args=[department_id]
+        'department:admin-detail', args=[department_id]
     )
 
 
