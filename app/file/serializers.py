@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from core.models import File, CommentFile, QueueLogic
 from user.serializers import UserNestedSerializer
+from department.serializers import DepartmentSerializer
 
 
 def validate_file_extension(file_extension):
@@ -89,7 +90,7 @@ class CommentFileManageSerializer(serializers.ModelSerializer):
 
 class QueueLogicManageSerializer(serializers.ModelSerializer):
     """Serializer for manage queue logic"""
-
+    
     class Meta:
         model = QueueLogic
         fields = '__all__'
@@ -109,6 +110,15 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
             )
         else:
             return response
+
+class DepStatsSerializer(serializers.ModelSerializer):
+    """Serializer for stats departments"""
+
+    department = DepartmentSerializer(many=False)
+
+    class Meta:
+        model = QueueLogic
+        fields = ['department',]
 
 
 class QueueLogicToFileSerializer(serializers.ModelSerializer):

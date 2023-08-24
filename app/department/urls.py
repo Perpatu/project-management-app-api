@@ -23,7 +23,11 @@ router.register(
     views.DepartmentEmployeeViewSet,
     basename='department-employee'
 )
-
+router.register(
+    'stats',
+    views.StatsViewSet,
+    basename='stats'
+)
 app_name = 'department'
 
 urlpatterns = [

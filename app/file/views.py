@@ -52,8 +52,8 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
             qs = serializer.save()
             message = {'detail': qs, 'status': True}
             return Response(message, status=status.HTTP_201_CREATED)
-        data = {"detail": serializer.errors, 'status': False}
-        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        info = {'message': serializer.errors, 'status': False}
+        return Response(info, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['GET'], detail=False, url_path='departments')
     def department_view(self, request):
@@ -66,6 +66,17 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         )
         return Response(serializer.data)
 
+    @action(methods=['GET'], detail=False, url_path='department/count')
+    def file_counts_in_department(self, request):
+        """
+            Counts how many files are assigned to department
+            add params dep_id to url
+        """
+        dep_id = self.request.query_params.get('dep_id')
+        dep_id_int = int(dep_id)
+        queryset = self.queryset.filter(queue__department__in=[dep_id_int]).count()
+        return Response(queryset)
+
     @action(methods=['GET'], detail=False, url_path='search')
     def file_search_view(self, request):
         query = self.request.query_params.get('search')
@@ -73,7 +84,8 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
                         SearchVector('file', weight="A")
         search_query = SearchQuery(query)
         result = File.objects.annotate(
-            search=search_vector, rank=SearchRank(search_vector, search_query)).filter(rank__gte=0.3).order_by('-rank')
+            search=search_vector, rank=SearchRank(search_vector, search_query)
+                                ).filter(rank__gte=0.3).order_by('-rank')
         ser = serializers.FileProjectSerializer(result, many=True)
         return Response(ser.data)
 

@@ -10,7 +10,6 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin
 )
-
 from django.core.validators import MinValueValidator, MaxValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -119,7 +118,7 @@ class Project(models.Model):
     class Meta:
         ordering = ['deadline']
         indexes = [
-            models.Index(fields=['deadline'])
+            models.Index(fields=['deadline', 'number'])
         ]
 
     def __str__(self) -> str:
@@ -176,7 +175,7 @@ class File(models.Model):
     class Meta:
         ordering = ['name']
         indexes = [
-            models.Index(fields=['name'])
+            models.Index(fields=['name', 'file'])
         ]
 
     def __str__(self) -> str:
