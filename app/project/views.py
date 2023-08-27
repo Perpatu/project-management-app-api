@@ -74,6 +74,7 @@ class ProjectAdminViewSet(viewsets.ModelViewSet):
         query = self.request.query_params.get('search')
         project_status = self.request.query_params.get('status')
         search_vector = SearchVector('number', weight='A') + \
+            SearchVector('manager__first_name', weight='A') + \
             SearchVector('manager__last_name', weight='A') + \
             SearchVector('client__name', weight='A') + \
             SearchVector('deadline', weight="B") + \
@@ -127,10 +128,11 @@ class ProjectEmployeeViewSet(viewsets.ReadOnlyModelViewSet):
         forbidden_status = ['Completed', 'Suspended']
         if project_status not in forbidden_status:
             search_vector = SearchVector('number', weight='A') + \
-                            SearchVector('manager__last_name', weight='A') + \
-                            SearchVector('client__name', weight='A') + \
-                            SearchVector('deadline', weight="B") + \
-                            SearchVector('priority', weight="C")
+                SearchVector('manager__first_name', weight='A') + \
+                SearchVector('manager__last_name', weight='A') + \
+                SearchVector('client__name', weight='A') + \
+                SearchVector('deadline', weight="B") + \
+                SearchVector('priority', weight="C")
             search_query = SearchQuery(query)
             result = Project.objects.annotate(
                 search=search_vector,

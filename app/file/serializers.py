@@ -3,7 +3,7 @@ Serializers for files APIs
 """
 from rest_framework import serializers
 
-from core.models import File, CommentFile, QueueLogic
+from core.models import File, CommentFile, QueueLogic, Department
 from user.serializers import UserNestedSerializer
 from department.serializers import DepartmentSerializer
 
@@ -102,14 +102,24 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
         serializer_file = FileProjectSerializer(file, many=False)
         data = serializer_file.data
         deps_id = []
-        for dep in data['queue']:
-            deps_id.append(dep['department'])
-        if response['department'].id in deps_id:
-            raise serializers.ValidationError(
-                'Queue with this department exist'
-            )
+        if len(data['queue']) != 0:
+            for dep in data['queue']:
+                deps_id.append(dep['department'])
+            if response['department'].id in deps_id:
+                raise Exception(
+                    'Queue with this department exist'
+                )
+            else:
+                deps_id.append(response['department'].id)
+                if min(deps_id) == response['department'].id:
+                    response['permission'] = True
+                    logic = QueueLogic.objects.get(file=response['file'].id, department=deps_id[0])
+                    logic.permission = False
+                    logic.save()
+                return response
         else:
-            return response
+            response['permission'] = True
+        return response
 
 
 class DepStatsSerializer(serializers.ModelSerializer):

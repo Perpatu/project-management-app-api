@@ -118,3 +118,19 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
     queryset = QueueLogic.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+
+
+    def destroy(self, request, *args, **kwargs):
+        object = self.get_object()
+        file = File.objects.filter(id=object.file.id).first()
+        serializer_file = serializers.FileProjectSerializer(file, many=False)
+        data = serializer_file.data
+        deps_id = []
+        for dep in data['queue']:
+            deps_id.append(dep['department'])
+        if min(deps_id) == object.department.id:
+            deps_id.remove(object.department.id)
+            logic = QueueLogic.objects.get(file=object.file.id, department=deps_id[0])
+            logic.permission = True
+            logic.save()
+        return super().destroy(request, *args, **kwargs)

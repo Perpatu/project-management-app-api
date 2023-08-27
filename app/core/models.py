@@ -200,7 +200,7 @@ class QueueLogic(models.Model):
     end = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['department']
+        ordering = ['department__order']
         indexes = [
             models.Index(fields=['department'])
         ]
