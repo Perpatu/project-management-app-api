@@ -119,18 +119,44 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-
-    def destroy(self, request, *args, **kwargs):
-        object = self.get_object()
-        file = File.objects.filter(id=object.file.id).first()
+    def update(self, request, *args, **kwargs):
+        self.serializer_class = serializers.QueueLogicUpdateSerializer
+        queue = self.get_object()
+        file = File.objects.filter(id=queue.file.id).first()
         serializer_file = serializers.FileProjectSerializer(file, many=False)
         data = serializer_file.data
         deps_id = []
         for dep in data['queue']:
             deps_id.append(dep['department'])
-        if min(deps_id) == object.department.id:
-            deps_id.remove(object.department.id)
-            logic = QueueLogic.objects.get(file=object.file.id, department=deps_id[0])
+        if request.data['end'] == True and queue.permission == True:
+            index = deps_id.index(queue.department.id)
+            logic = QueueLogic.objects.get(file=queue.file.id, department=deps_id[index+1])
+            logic.permission = True
+            logic.save()
+        if request.data['end'] == False and queue.permission == True:
+            index = deps_id.index(queue.department.id)
+            deps_id = deps_id[index+1:]
+            if len(deps_id) > 1:               
+                for x in deps_id:
+                    logic = QueueLogic.objects.get(file=queue.file.id, department=x)
+                    logic.permission = False
+                    logic.end = False
+                    logic.start = False
+                    logic.paused = False
+                    logic.save()                
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        queue = self.get_object()
+        file = File.objects.filter(id=queue.file.id).first()
+        serializer_file = serializers.FileProjectSerializer(file, many=False)
+        data = serializer_file.data
+        deps_id = []
+        for dep in data['queue']:
+            deps_id.append(dep['department'])
+        if min(deps_id) == queue.department.id:
+            deps_id.remove(queue.department.id)
+            logic = QueueLogic.objects.get(file=queue.file.id, department=deps_id[0])
             logic.permission = True
             logic.save()
         return super().destroy(request, *args, **kwargs)

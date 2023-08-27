@@ -193,6 +193,10 @@ class QueueLogic(models.Model):
         Department,
         on_delete=models.CASCADE
     )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE
+    )
     chosen = models.BooleanField(default=False)
     permission = models.BooleanField(default=False)
     start = models.BooleanField(default=False)

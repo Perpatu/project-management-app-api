@@ -3,7 +3,7 @@ Serializers for files APIs
 """
 from rest_framework import serializers
 
-from core.models import File, CommentFile, QueueLogic, Department
+from core.models import File, CommentFile, QueueLogic
 from user.serializers import UserNestedSerializer
 from department.serializers import DepartmentSerializer
 
@@ -88,13 +88,22 @@ class CommentFileManageSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class QueueLogicUpdateSerializer(serializers.ModelSerializer):
+    """Serializer Manage for comment file"""
+
+    class Meta:
+        model = QueueLogic
+        fields = '__all__'
+        read_only_fields = ['id', 'project', 'department', 'file']
+
+
 class QueueLogicManageSerializer(serializers.ModelSerializer):
     """Serializer for manage queue logic"""
 
     class Meta:
         model = QueueLogic
         fields = '__all__'
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'project']
 
     def to_internal_value(self, data):
         response = super().to_internal_value(data)
@@ -113,7 +122,9 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
                 deps_id.append(response['department'].id)
                 if min(deps_id) == response['department'].id:
                     response['permission'] = True
-                    logic = QueueLogic.objects.get(file=response['file'].id, department=deps_id[0])
+                    logic = QueueLogic.objects.get(
+                        file=response['file'].id, department=deps_id[0]
+                    )
                     logic.permission = False
                     logic.save()
                 return response
