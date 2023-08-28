@@ -18,6 +18,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from app.settings import MEDIA_ROOT
 from file import serializers
+from project.serializers import ProjectProgressSerializer
 
 from core.models import (
     File,
@@ -30,10 +31,12 @@ from core.models import (
 def project_progress(project_id):
     all_task = QueueLogic.objects.filter(project=project_id).count()
     end_task = QueueLogic.objects.filter(project=project_id, end=True).count()
-    procent = (end_task / all_task) * 100
     project = Project.objects.get(id=project_id)
-    project.progress = procent
-    project.save()
+    procent = (end_task / all_task) * 100
+    data = {'progress': int(procent)}
+    serializer = ProjectProgressSerializer(project, data=data)
+    if serializer.is_valid():
+        serializer.save()
 
 
 class FileAdminViewSet(mixins.DestroyModelMixin,
@@ -130,6 +133,7 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
+        """Creating logic and calculate project progress"""
         ser_data = serializer.validated_data
         file = File.objects.filter(id=ser_data['file'].id).first()
         serializer_file = serializers.FileProjectSerializer(file, many=False)
@@ -159,6 +163,7 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
         return super().perform_create(serializer)
 
     def update(self, request, *args, **kwargs):
+        """Updating logic and calculate project progress"""
         self.serializer_class = serializers.QueueLogicUpdateSerializer
         request_data = request.data
         queue_obj = self.get_object()
@@ -193,6 +198,7 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
+        """deleting logic and calculate project progress"""
         queue = self.get_object()
         file = File.objects.filter(id=queue.file.id).first()
         serializer_file = serializers.FileProjectSerializer(file, many=False)

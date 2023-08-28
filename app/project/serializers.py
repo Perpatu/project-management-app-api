@@ -83,3 +83,11 @@ class ProjectDetailSerializer(ProjectSerializer):
 
     class Meta(ProjectSerializer.Meta):
         fields = ProjectSerializer.Meta.fields + ['comments', 'files']
+
+
+class ProjectProgressSerializer(serializers.ModelSerializer):
+    """Serializer for project"""
+
+    class Meta:
+        model = Project
+        fields = ['id', 'progress']
