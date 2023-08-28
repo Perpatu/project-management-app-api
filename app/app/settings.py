@@ -153,3 +153,12 @@ SPECTACULAR_SETTINGS = {
 }
 
 DATA_UPLOAD_MAX_NUMBER_FILES = 2000000000
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+    },
+}
