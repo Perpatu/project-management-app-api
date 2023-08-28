@@ -160,7 +160,8 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
             ser_data['permission'] = True
         super().perform_create(serializer)
         project_progress(ser_data['project'].id)
-        return super().perform_create(serializer)
+        info = {'message': 'queue has been added'}
+        return Response(info)
 
     def update(self, request, *args, **kwargs):
         """Updating logic and calculate project progress"""
@@ -195,26 +196,27 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
                     logic.save()
         super().update(request, *args, **kwargs)
         project_progress(request_data['project'])
-        return super().update(request, *args, **kwargs)
+        info = {'message': f'queue with id {queue_obj.id} has been updated'}
+        return Response(info)
 
     def destroy(self, request, *args, **kwargs):
         """deleting logic and calculate project progress"""
-        queue = self.get_object()
-        file = File.objects.filter(id=queue.file.id).first()
+        queue_obj = self.get_object()
+        file = File.objects.filter(id=queue_obj.file.id).first()
         serializer_file = serializers.FileProjectSerializer(file, many=False)
         data = serializer_file.data
         deps_id = []
         for dep in data['queue']:
             deps_id.append(dep['department'])
-        if min(deps_id) == queue.department.id:
+        if min(deps_id) == queue_obj.department.id:
             if len(deps_id) != 1:
-                deps_id.remove(queue.department.id)
+                deps_id.remove(queue_obj.department.id)
             logic = QueueLogic.objects.get(
-                file=queue.file.id, department=deps_id[0]
+                file=queue_obj.file.id, department=deps_id[0]
             )
             logic.permission = True
             logic.save()
         super().destroy(request, *args, **kwargs)
-        project_progress(queue.project.id)
-        info = {'message': f'queue with id {queue.id} has been deleted'}
+        project_progress(queue_obj.project.id)
+        info = {'message': f'queue with id {queue_obj.id} has been deleted'}
         return Response(info)
