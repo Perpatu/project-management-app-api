@@ -21,9 +21,19 @@ from file import serializers
 
 from core.models import (
     File,
+    Project,
     CommentFile,
     QueueLogic,
 )
+
+
+def project_progress(project_id):
+    all_task = QueueLogic.objects.filter(project=project_id).count()
+    end_task = QueueLogic.objects.filter(project=project_id, end=True).count()
+    procent = (end_task / all_task) * 100
+    project = Project.objects.get(id=project_id)
+    project.progress = procent
+    project.save()
 
 
 class FileAdminViewSet(mixins.DestroyModelMixin,
@@ -119,31 +129,67 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        ser_data = serializer.validated_data
+        file = File.objects.filter(id=ser_data['file'].id).first()
+        serializer_file = serializers.FileProjectSerializer(file, many=False)
+        data = serializer_file.data
+        deps_id = []
+        if len(data['queue']) != 0:
+            for dep in data['queue']:
+                deps_id.append(dep['department'])
+            if ser_data['department'].id in deps_id:
+                raise Exception(
+                    'Queue with this department exist'
+                )
+            else:
+                deps_id.append(ser_data['department'].id)
+                if min(deps_id) == ser_data['department'].id:
+                    ser_data['permission'] = True
+                    logic = QueueLogic.objects.get(
+                        file=ser_data['file'].id, department=deps_id[0]
+                    )
+                    logic.permission = False
+                    logic.save()
+                super().perform_create(serializer)
+        else:
+            ser_data['permission'] = True
+        super().perform_create(serializer)
+        project_progress(ser_data['project'].id)
+        return super().perform_create(serializer)
+
     def update(self, request, *args, **kwargs):
         self.serializer_class = serializers.QueueLogicUpdateSerializer
-        queue = self.get_object()
-        file = File.objects.filter(id=queue.file.id).first()
+        request_data = request.data
+        queue_obj = self.get_object()
+        file = File.objects.filter(id=queue_obj.file.id).first()
         serializer_file = serializers.FileProjectSerializer(file, many=False)
         data = serializer_file.data
         deps_id = []
         for dep in data['queue']:
             deps_id.append(dep['department'])
-        if request.data['end'] == True and queue.permission == True:
-            index = deps_id.index(queue.department.id)
-            logic = QueueLogic.objects.get(file=queue.file.id, department=deps_id[index+1])
+        if request_data['end'] and queue_obj.permission:
+            index = deps_id.index(queue_obj.department.id)
+            logic = QueueLogic.objects.get(
+                file=queue_obj.file.id, department=deps_id[index+1]
+            )
             logic.permission = True
             logic.save()
-        if request.data['end'] == False and queue.permission == True:
-            index = deps_id.index(queue.department.id)
+        if request_data['end'] and queue_obj.permission:
+            index = deps_id.index(queue_obj.department.id)
             deps_id = deps_id[index+1:]
-            if len(deps_id) > 1:               
-                for x in deps_id:
-                    logic = QueueLogic.objects.get(file=queue.file.id, department=x)
+            if len(deps_id) > 1:
+                for dep_id in deps_id:
+                    logic = QueueLogic.objects.get(
+                        file=queue_obj.file.id, department=dep_id
+                    )
                     logic.permission = False
                     logic.end = False
                     logic.start = False
                     logic.paused = False
-                    logic.save()                
+                    logic.save()
+        super().update(request, *args, **kwargs)
+        project_progress(request_data['project'])
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
@@ -155,8 +201,14 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
         for dep in data['queue']:
             deps_id.append(dep['department'])
         if min(deps_id) == queue.department.id:
-            deps_id.remove(queue.department.id)
-            logic = QueueLogic.objects.get(file=queue.file.id, department=deps_id[0])
+            if len(deps_id) != 1:
+                deps_id.remove(queue.department.id)
+            logic = QueueLogic.objects.get(
+                file=queue.file.id, department=deps_id[0]
+            )
             logic.permission = True
             logic.save()
-        return super().destroy(request, *args, **kwargs)
+        super().destroy(request, *args, **kwargs)
+        project_progress(queue.project.id)
+        info = {'message': f'queue with id {queue.id} has been deleted'}
+        return Response(info)

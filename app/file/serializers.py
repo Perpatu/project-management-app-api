@@ -103,34 +103,7 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
     class Meta:
         model = QueueLogic
         fields = '__all__'
-        read_only_fields = ['id', 'project']
-
-    def to_internal_value(self, data):
-        response = super().to_internal_value(data)
-        file = File.objects.filter(id=response['file'].id).first()
-        serializer_file = FileProjectSerializer(file, many=False)
-        data = serializer_file.data
-        deps_id = []
-        if len(data['queue']) != 0:
-            for dep in data['queue']:
-                deps_id.append(dep['department'])
-            if response['department'].id in deps_id:
-                raise Exception(
-                    'Queue with this department exist'
-                )
-            else:
-                deps_id.append(response['department'].id)
-                if min(deps_id) == response['department'].id:
-                    response['permission'] = True
-                    logic = QueueLogic.objects.get(
-                        file=response['file'].id, department=deps_id[0]
-                    )
-                    logic.permission = False
-                    logic.save()
-                return response
-        else:
-            response['permission'] = True
-        return response
+        read_only_fields = ['id']
 
 
 class DepStatsSerializer(serializers.ModelSerializer):
