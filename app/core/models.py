@@ -132,7 +132,7 @@ class Department(models.Model):
     date_add = models.DateField(auto_now_add=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = ['order']
         indexes = [
             models.Index(fields=['name'])
         ]
@@ -175,7 +175,8 @@ class File(models.Model):
     class Meta:
         ordering = ['name']
         indexes = [
-            models.Index(fields=['name', 'file'])
+            models.Index(fields=['name']),
+            models.Index(fields=['file'])
         ]
 
     def __str__(self) -> str:

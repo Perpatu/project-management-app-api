@@ -3,7 +3,12 @@ Serializers for files APIs
 """
 from rest_framework import serializers
 
-from core.models import File, CommentFile, QueueLogic
+from core.models import (
+    File,
+    Project,
+    CommentFile,
+    QueueLogic
+)
 from user.serializers import UserNestedSerializer
 from department.serializers import DepartmentSerializer
 
@@ -136,14 +141,31 @@ class FileProjectSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class ProjectFileSerializer(serializers.ModelSerializer):
+    """Serializer for project"""
+
+    class Meta:
+        model = Project
+        fields = ['id', 'manager']
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        first_name = UserNestedSerializer(instance.manager).data['first_name']
+        last_name = UserNestedSerializer(instance.manager).data['last_name']
+        manager = first_name + ' ' + last_name
+        response['manager'] = manager
+        return response
+
+
 class FileDepartmentSerializer(serializers.ModelSerializer):
     """Serializer for file in department"""
     comments = CommentFileDisplaySerializer(many=True)
     queue = QueueLogicToFileSerializer(many=True)
+    project = ProjectFileSerializer(many=False)
 
     class Meta:
         model = File
-        fields = ['id', 'name', 'file', 'comments', 'queue']
+        fields = ['id', 'name', 'file', 'comments', 'project', 'queue']
         read_only_fields = ['id']
 
     def to_representation(self, instance):

@@ -19,10 +19,11 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from app.settings import MEDIA_ROOT
 from file import serializers
 from project.serializers import ProjectProgressSerializer
-
+from department.serializers import DepartmentSerializer
 from core.models import (
     File,
     Project,
+    Department,
     CommentFile,
     QueueLogic,
 )
@@ -67,6 +68,18 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         info = {'message': serializer.errors, 'status': False}
         return Response(info, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['GET'], detail=False, url_path='columns-manage')
+    def file_admin_mange_columns(self, request):
+        """Columns for mange files"""
+        deps = Department.objects.all()
+        deps_ser = DepartmentSerializer(deps, many=True)
+        deps_name = []
+        for dep in deps_ser.data:
+            deps_name.append(dep['name'])
+        columns = ['view', 'filename', 'options']
+        result = columns[0:2] + deps_name + [columns[2]]
+        return Response(result)
+
 
 class FileAuthViewSet(viewsets.GenericViewSet):
     """Manage file APIs"""
@@ -75,7 +88,7 @@ class FileAuthViewSet(viewsets.GenericViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @action(methods=['GET'], detail=False, url_path='departments')
+    @action(methods=['GET'], detail=False, url_path='department')
     def department_view(self, request):
         """Files assinged for department add params dep_id to url"""
         dep_id = self.request.query_params.get('dep_id')
@@ -110,6 +123,31 @@ class FileAuthViewSet(viewsets.GenericViewSet):
         ser = serializers.FileProjectSerializer(result, many=True)
         return Response(ser.data)
 
+    @action(methods=['GET'], detail=False, url_path='columns-project')
+    def file_auth_project_columns(self, request):
+        """Columns for files at project"""
+        deps = Department.objects.all()
+        deps_ser = DepartmentSerializer(deps, many=True)
+        deps_name = []
+        for dep in deps_ser.data:
+            deps_name.append(dep['name'])
+        columns = ['view', 'filename', 'comments']
+        result = columns[0:2] + deps_name + [columns[2]]
+        return Response(result)
+
+    @action(methods=['GET'], detail=False, url_path='columns-department')
+    def file_auth_department_columns(self, request):
+        """Columns for files at project"""
+        deps = Department.objects.all()
+        deps_ser = DepartmentSerializer(deps, many=True)
+        deps_name = []
+        for dep in deps_ser.data:
+            deps_name.append(dep['name'])
+        columns = ['view', 'filename',
+                   'task', 'manager',
+                   'project', 'comments']
+        return Response(columns)
+
 
 class CommentFileViewSet(mixins.CreateModelMixin,
                          mixins.DestroyModelMixin,
@@ -125,6 +163,17 @@ class CommentFileViewSet(mixins.CreateModelMixin,
         if self.action == 'create' or self.action == 'destroy':
             return serializers.CommentFileManageSerializer
         return self.serializer_class
+
+    def destroy(self, request, *args, **kwargs):
+        user = request.user
+        if not user.is_staff:
+            comment_object = self.get_object()
+            if user.id == comment_object.user.id:
+                return super().destroy(request, *args, **kwargs)
+            else:
+                info = {'message': 'This is not your comment'}
+                Response(info, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
 
 class QueueLogicViewSet(mixins.CreateModelMixin,
