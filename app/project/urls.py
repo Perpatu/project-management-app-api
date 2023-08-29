@@ -20,7 +20,7 @@ router.register(
 )
 router.register(
     'auth',
-    views.ProjectEmployeeViewSet,
+    views.ProjectAuthViewSet,
     basename='auth'
 )
 router.register(

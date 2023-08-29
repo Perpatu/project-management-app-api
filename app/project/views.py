@@ -95,7 +95,7 @@ class ProjectAdminViewSet(viewsets.ModelViewSet):
         return Response(columns)
 
 
-class ProjectEmployeeViewSet(viewsets.ReadOnlyModelViewSet):
+class ProjectAuthViewSet(viewsets.ReadOnlyModelViewSet):
     """View for manage employee project APIs"""
     serializer_class = serializers.ProjectSerializer
     queryset = Project.objects.all()
@@ -164,7 +164,6 @@ class CommentProjectViewSet(mixins.CreateModelMixin,
 
     def get_serializer_class(self):
         """Return the serializer class for request."""
-        # Add only admin can delete all comment but auth user only delete self comment
         if self.action == 'create' or self.action == 'destroy':
             return serializers.CommentProjectManageSerializer
         return self.serializer_class
