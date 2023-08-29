@@ -167,3 +167,14 @@ class CommentProjectViewSet(mixins.CreateModelMixin,
         if self.action == 'create' or self.action == 'destroy':
             return serializers.CommentProjectManageSerializer
         return self.serializer_class
+
+    def destroy(self, request, *args, **kwargs):
+        user = request.user
+        if not user.is_staff:
+            comment_object = self.get_object()
+            if user.id == comment_object.user.id:
+                return super().destroy(request, *args, **kwargs)
+            else:
+                info = {'message': 'This is not your comment'}
+                Response(info, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
