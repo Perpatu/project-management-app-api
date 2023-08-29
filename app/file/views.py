@@ -15,7 +15,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from app.settings import MEDIA_ROOT
 from file import serializers
 from project.serializers import ProjectProgressSerializer
@@ -187,9 +187,15 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
 
     def get_permissions(self):
         if self.action == 'update' or self.request.method == 'PATCH':
-            return [AllowAny()]
+            return [IsAuthenticated()]
         else:
             return [IsAdminUser()]
+    
+    def get_serializer_class(self):
+        """Return the serializer class for request."""
+        if self.action == 'update' or self.request.method == 'PATCH':
+            return serializers.QueueLogicUpdateSerializer
+        return self.serializer_class
 
     def perform_create(self, serializer):
         """Creating logic and calculate project progress"""
@@ -224,7 +230,6 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
 
     def update(self, request, *args, **kwargs):
         """Updating logic and calculate project progress"""
-        self.serializer_class = serializers.QueueLogicUpdateSerializer
         request_data = request.data
         queue_obj = self.get_object()
         file = File.objects.filter(id=queue_obj.file.id).first()

@@ -45,10 +45,16 @@ class ProjectAdminViewSet(viewsets.ModelViewSet):
         return self.serializer_class
 
     def create(self, request, *args, **kwargs):
-        request.data
-        
-        print(request.data)
-        return super().create(request, *args, **kwargs)
+        try:
+            """
+            At the moment I don't know how to fix it.
+            Expected a `date`, but got a `datetime`.
+            Refusing to coerce, as this may mean losing timezone information.
+            Use a custom read-only field and deal with timezone issues explicitly.
+            """
+            return super().create(request, *args, **kwargs)
+        except AssertionError:
+            return Response(request.data)
 
     def destroy(self, request, *args, **kwargs):
         """Delete project object in db and folder with files on server"""
