@@ -17,6 +17,11 @@ router.register(
     basename='admin'
 )
 router.register(
+    'auth',
+    views.FileAuthViewSet,
+    basename='auth'
+)
+router.register(
     'comments',
     views.CommentFileViewSet,
     basename='comments'

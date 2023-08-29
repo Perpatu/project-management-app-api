@@ -15,7 +15,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from app.settings import MEDIA_ROOT
 from file import serializers
 from project.serializers import ProjectProgressSerializer
@@ -42,7 +42,6 @@ def project_progress(project_id):
 class FileAdminViewSet(mixins.DestroyModelMixin,
                        mixins.CreateModelMixin,
                        mixins.UpdateModelMixin,
-                       mixins.ListModelMixin,
                        viewsets.GenericViewSet):
     """Manage file APIs"""
     serializer_class = serializers.FileManageSerializer
@@ -66,7 +65,15 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
             message = {'detail': qs, 'status': True}
             return Response(message, status=status.HTTP_201_CREATED)
         info = {'message': serializer.errors, 'status': False}
-        return Response(info, status=status.HTTP_400_BAD_REQUEST)
+        return Response(info, status=status.HTTP_400_BAD_REQUEST)   
+
+
+class FileAuthViewSet(viewsets.GenericViewSet):
+    """Manage file APIs"""
+    serializer_class = serializers.FileManageSerializer
+    queryset = File.objects.all()
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @action(methods=['GET'], detail=False, url_path='departments')
     def department_view(self, request):
@@ -106,7 +113,6 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
 
 class CommentFileViewSet(mixins.CreateModelMixin,
                          mixins.DestroyModelMixin,
-                         mixins.ListModelMixin,
                          viewsets.GenericViewSet):
     """Manage comments file APIs"""
     serializer_class = serializers.CommentFileDisplaySerializer
@@ -123,14 +129,18 @@ class CommentFileViewSet(mixins.CreateModelMixin,
 
 class QueueLogicViewSet(mixins.CreateModelMixin,
                         mixins.DestroyModelMixin,
-                        mixins.ListModelMixin,
                         mixins.UpdateModelMixin,
                         viewsets.GenericViewSet):
     """Manage Queue Logic for file APIs"""
     serializer_class = serializers.QueueLogicManageSerializer
     queryset = QueueLogic.objects.all()
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == 'update' or self.request.method == 'PATCH':
+            return [AllowAny()]
+        else:
+            return [IsAdminUser()]
 
     def perform_create(self, serializer):
         """Creating logic and calculate project progress"""
