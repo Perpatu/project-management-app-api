@@ -33,8 +33,7 @@ ALLOWED_HOSTS = []
 ASGI_APPLICATION = 'app.asgi.application'
 
 INSTALLED_APPS = [
-    'daphne',
-    'channels',
+    'daphne',    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,6 +44,7 @@ INSTALLED_APPS = [
     'core',
     'rest_framework',
     'rest_framework.authtoken',
+    'channels',
     'drf_spectacular',
     'phonenumber_field',
     'django_phonenumbers',
@@ -159,7 +159,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+            'hosts': [('channels', 6379)],
         },
     },
 }

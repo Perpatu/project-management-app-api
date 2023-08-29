@@ -118,7 +118,8 @@ class Project(models.Model):
     class Meta:
         ordering = ['deadline']
         indexes = [
-            models.Index(fields=['deadline', 'number'])
+            models.Index(fields=['deadline']),
+            models.Index(fields=['number'])
         ]
 
     def __str__(self) -> str:

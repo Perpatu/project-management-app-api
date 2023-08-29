@@ -12,6 +12,8 @@ services:
   
   channels:
     image: redis:7.2.0-alpine
+    ports:
+      - "6379:6379"
     volumes:
       - dev-channels-data:/data/channels/data
   

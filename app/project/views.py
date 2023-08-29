@@ -12,6 +12,9 @@ from django.contrib.postgres.search import (
     SearchQuery,
     SearchRank
 )
+from datetime import datetime
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -33,9 +36,19 @@ class ProjectAdminViewSet(viewsets.ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminUser]
 
-    def perform_create(self, serializer):
-        """Create a new project"""
-        serializer.save()
+    def get_serializer_class(self):
+        """Return the serializer class for request."""
+        if self.action == 'retrieve':
+            return serializers.ProjectDetailSerializer
+        elif self.action == 'create':
+            return serializers.ProjectCreateSerializer
+        return self.serializer_class
+
+    def create(self, request, *args, **kwargs):
+        request.data
+        
+        print(request.data)
+        return super().create(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         """Delete project object in db and folder with files on server"""
@@ -47,13 +60,7 @@ class ProjectAdminViewSet(viewsets.ModelViewSet):
             return Response("Deleted Successfully!!")
         else:
             project.delete()
-            return Response("Deleted Successfully!!")
-
-    def get_serializer_class(self):
-        """Return the serializer class for request."""
-        if self.action == 'retrieve':
-            return serializers.ProjectDetailSerializer
-        return self.serializer_class
+            return Response("Deleted Successfully!!")    
 
     @action(methods=['GET'], detail=False, url_path='status')
     def project_admin_status_view(self, request):
