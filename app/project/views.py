@@ -53,7 +53,7 @@ class ProjectAdminViewSet(viewsets.ModelViewSet):
             Use a custom read-only field and deal with timezone issues explicitly.
             """
             return super().create(request, *args, **kwargs)
-        except AssertionError:
+        except AssertionError as e:
             return Response(request.data)
 
     def destroy(self, request, *args, **kwargs):
