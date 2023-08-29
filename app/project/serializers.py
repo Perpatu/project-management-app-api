@@ -43,12 +43,19 @@ class CommentProjectManageSerializer(serializers.ModelSerializer):
 
 class ProjectCreateSerializer(serializers.ModelSerializer):
     """Serializer create project"""
-    start = serializers.DateField(format='%Y-%m-%d')
-    deadline = serializers.DateField(format='%Y-%m-%d')
     
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = [
+            'id',
+            'manager',
+            'client',
+            'start',
+            'deadline',            
+            'priority',            
+            'number',
+        ]
+        read_only_fields = ['id']
 
 
 class ProjectSerializer(serializers.ModelSerializer):
