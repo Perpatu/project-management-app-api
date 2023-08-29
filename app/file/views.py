@@ -65,7 +65,7 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
             message = {'detail': qs, 'status': True}
             return Response(message, status=status.HTTP_201_CREATED)
         info = {'message': serializer.errors, 'status': False}
-        return Response(info, status=status.HTTP_400_BAD_REQUEST)   
+        return Response(info, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FileAuthViewSet(viewsets.GenericViewSet):
