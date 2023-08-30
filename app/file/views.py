@@ -190,7 +190,7 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
             return [IsAuthenticated()]
         else:
             return [IsAdminUser()]
-    
+
     def get_serializer_class(self):
         """Return the serializer class for request."""
         if self.action == 'update' or self.request.method == 'PATCH':

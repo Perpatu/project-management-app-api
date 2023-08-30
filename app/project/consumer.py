@@ -15,7 +15,6 @@ class ProjectNotiConsumer(AsyncJsonWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message_type = text_data_json["type"]
-        print(notification_data)
         notification_data = text_data_json["notification_data"]
         project = text_data_json["project"]
 

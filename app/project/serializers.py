@@ -43,7 +43,7 @@ class CommentProjectManageSerializer(serializers.ModelSerializer):
 
 class ProjectCreateSerializer(serializers.ModelSerializer):
     """Serializer create project"""
-    
+
     class Meta:
         model = Project
         fields = [
@@ -51,8 +51,8 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             'manager',
             'client',
             'start',
-            'deadline',            
-            'priority',            
+            'deadline',
+            'priority',
             'number',
         ]
         read_only_fields = ['id']
