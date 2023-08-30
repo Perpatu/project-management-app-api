@@ -164,7 +164,7 @@ class File(models.Model):
         related_name='files',
         on_delete=models.CASCADE
     )
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=True)
     destiny = models.CharField(
         max_length=30,
         blank=False,

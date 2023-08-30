@@ -17,27 +17,15 @@ from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from app.settings import MEDIA_ROOT
+from .file_utils import project_progress, search_file_department
 from file import serializers
-from project.serializers import ProjectProgressSerializer
 from department.serializers import DepartmentSerializer
 from core.models import (
-    File,
-    Project,
+    File,    
     Department,
     CommentFile,
     QueueLogic,
 )
-
-
-def project_progress(project_id):
-    all_task = QueueLogic.objects.filter(project=project_id).count()
-    end_task = QueueLogic.objects.filter(project=project_id, end=True).count()
-    project = Project.objects.get(id=project_id)
-    procent = (end_task / all_task) * 100
-    data = {'progress': int(procent)}
-    serializer = ProjectProgressSerializer(project, data=data)
-    if serializer.is_valid():
-        serializer.save()
 
 
 class FileAdminViewSet(mixins.DestroyModelMixin,
@@ -113,15 +101,11 @@ class FileAuthViewSet(viewsets.GenericViewSet):
 
     @action(methods=['GET'], detail=False, url_path='search')
     def file_search_view(self, request):
-        query = self.request.query_params.get('search')
-        search_vector = SearchVector('name', weight='B') + \
-            SearchVector('file', weight="A")
-        search_query = SearchQuery(query)
-        result = File.objects.annotate(
-            search=search_vector, rank=SearchRank(search_vector, search_query)
-                                ).filter(rank__gte=0.3).order_by('-rank')
-        ser = serializers.FileProjectSerializer(result, many=True)
-        return Response(ser.data)
+        dep_id = self.request.query_params.get('dep_id')
+        search = self.request.query_params.get('search')
+        file_status = self.request.query_params.get('status')        
+        response = search_file_department(dep_id, search, file_status)
+        return response
 
     @action(methods=['GET'], detail=False, url_path='columns-project')
     def file_auth_project_columns(self, request):

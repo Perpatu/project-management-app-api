@@ -47,8 +47,7 @@ class FilesUploadSerializer(serializers.ModelSerializer):
         user = validated_data['user']
         destiny = validated_data['destiny']
         file = validated_data.pop('file')
-        file_list = []
-
+        file_list = []        
         for file in file:
             file_name_str = str(file).lower()
             file_split = file_name_str.split('.')
