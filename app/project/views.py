@@ -135,7 +135,6 @@ class CommentProjectViewSet(mixins.CreateModelMixin,
             comment_object = self.get_object()
             if user.id == comment_object.user.id:
                 return super().destroy(request, *args, **kwargs)
-            else:
-                info = {'message': 'This is not your comment'}
-                Response(info, status=status.HTTP_403_FORBIDDEN)
+            info = {'message': 'This is not your comment'}
+            Response(info, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
