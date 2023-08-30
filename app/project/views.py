@@ -69,7 +69,8 @@ class ProjectAdminViewSet(mixins.CreateModelMixin,
         return Response(columns)
 
 
-class ProjectAuthViewSet(viewsets.ReadOnlyModelViewSet):
+class ProjectAuthViewSet(mixins.RetrieveModelMixin,
+                         viewsets.GenericViewSet):
     """View for manage employee project APIs"""
     serializer_class = serializers.ProjectSerializer
     queryset = Project.objects.all()
