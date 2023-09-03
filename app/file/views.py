@@ -20,7 +20,7 @@ from .file_utils import (
 from file import serializers
 from department.serializers import DepartmentSerializer
 from core.models import (
-    File,    
+    File,
     Department,
     CommentFile,
     QueueLogic,
@@ -99,7 +99,7 @@ class FileAuthViewSet(viewsets.GenericViewSet):
     def file_search_view(self, request):
         dep_id = self.request.query_params.get('dep_id')
         search = self.request.query_params.get('search')
-        status = self.request.query_params.get('status')        
+        status = self.request.query_params.get('status')
         response = search_file_department(dep_id, search, status)
         return response
 
@@ -190,7 +190,7 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
             if ser_data['department'].id in deps_id:
                 raise Exception(
                     'Queue with this department exist'
-                )            
+                )
             deps_id.append(ser_data['department'].id)
             if min(deps_id) == ser_data['department'].id:
                 ser_data['permission'] = True
@@ -199,7 +199,7 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
                 )
                 logic.permission = False
                 logic.save()
-            super().perform_create(serializer)      
+            super().perform_create(serializer)
         ser_data['permission'] = True
         super().perform_create(serializer)
         project_progress(ser_data['project'].id)
@@ -218,14 +218,13 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
             deps_id.append(dep['department'])
         if len(deps_id) > 1:
             if request_data['end'] and queue_obj.permission:
-                
                 index = deps_id.index(queue_obj.department.id)
                 logic = QueueLogic.objects.get(
                     file=queue_obj.file.id, department=deps_id[index+1]
                 )
                 logic.permission = True
                 logic.save()
-            if not request_data['end'] and queue_obj.permission:                
+            if not request_data['end'] and queue_obj.permission:
                 index = deps_id.index(queue_obj.department.id)
                 deps_id = deps_id[index+1:]
                 for dep_id in deps_id:
@@ -236,10 +235,11 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
                     logic.end = False
                     logic.start = False
                     logic.paused = False
-                    logic.save()        
+                    logic.save()
         super().update(request, *args, **kwargs)
-        info = {'message': f'queue logic with id {queue_obj.id} has been updated' }
-        project_progress(request_data['project'])        
+        info = {'message': f'queue logic with id \
+                {queue_obj.id} has been updated'}
+        project_progress(request_data['project'])
         return Response(info)
 
     def destroy(self, request, *args, **kwargs):

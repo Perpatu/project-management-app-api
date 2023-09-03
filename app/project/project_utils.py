@@ -21,12 +21,10 @@ def vector():
 
 def search_auth(search_phase, project_status):
     forbidden_status = {'Completed', 'Suspended', 'My Active',
-                         'My Suspended', 'My Completed'}
-    
+                        'My Suspended', 'My Completed'}
     if project_status in forbidden_status:
         return Response({'message': 'You do not have permissions'},
-                         status=status.HTTP_403_FORBIDDEN)
-
+                        status=status.HTTP_403_FORBIDDEN)
     search_vector = vector()
     search_query = SearchQuery(search_phase)
 
@@ -40,7 +38,7 @@ def search_auth(search_phase, project_status):
         ).order_by('-rank')
     else:
         return Response({'message': 'There is no such project status'},
-                         status=status.HTTP_404_NOT_FOUND)
+                        status=status.HTTP_404_NOT_FOUND)
     serializer = ProjectSerializer(query, many=True)
     return Response(serializer.data)
 
@@ -48,14 +46,13 @@ def search_auth(search_phase, project_status):
 def search_admin(search_phase, project_status, user):
     if not user.is_staff:
         return Response({'message': 'You do not have permissions'},
-                         status=status.HTTP_403_FORBIDDEN)
+                        status=status.HTTP_403_FORBIDDEN)
     search_vector = vector()
     search_query = SearchQuery(search_phase)
     project_queryset = Project.objects.annotate(
         search=search_vector,
-        rank=SearchRank(search_vector,search_query)
+        rank=SearchRank(search_vector, search_query)
     ).filter(rank__gte=0.1)
-
     if project_status == 'My Active':
         project_queryset = project_queryset.filter(
             manager__id=user.id,
@@ -85,7 +82,7 @@ def search_admin(search_phase, project_status, user):
         )
     else:
         return Response({'message': 'There is no such project status'},
-                         status=status.HTTP_404_NOT_FOUND)
+                        status=status.HTTP_404_NOT_FOUND)
     projects = project_queryset.order_by('-rank')
     serializer = ProjectSerializer(projects, many=True)
     return Response(serializer.data)
@@ -109,7 +106,8 @@ def filter_auth(queryset, project_status):
 
 def filter_admin(queryset, project_status, user):
     if not user.is_staff:
-        info = {'message': 'You do not have permission to perform this action.'}
+        info = {'message': 'You do not have permission to \
+                perform this action.'}
         return Response(info, status=status.HTTP_403_FORBIDDEN)
 
     if project_status == 'My_Active':
