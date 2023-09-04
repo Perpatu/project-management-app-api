@@ -7,9 +7,8 @@ from rest_framework import (
     viewsets,
     mixins,
 )
-# from datetime import datetime
-# from asgiref.sync import async_to_sync
-# from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -47,7 +46,20 @@ class ProjectAdminViewSet(mixins.CreateModelMixin,
 
     def create(self, request, *args, **kwargs):
         """Create and return new project"""
-        return super().create(request, *args, **kwargs)
+        response = super().create(request, *args, **kwargs)
+
+        if response.status_code == 201:
+            project_data = response.data
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'project_group',
+                {
+                    'type': 'project_add',
+                    'message': project_data,
+                }
+            )
+
+        return response
 
     def destroy(self, request, *args, **kwargs):
         """Delete project object in db and folder with files on server"""
@@ -55,11 +67,31 @@ class ProjectAdminViewSet(mixins.CreateModelMixin,
         dir_path = MEDIA_ROOT + '/uploads/projects/' + str(project.id) + '/'
         if os.path.isdir(dir_path):
             shutil.rmtree(dir_path)
-            project.delete()
-            return Response("Deleted Successfully!!")
+            response = super().destroy(request, *args, **kwargs)
+            if response.status_code == 204:
+                project_data = {'id': project.id}
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    'project_group',
+                    {
+                        'type': 'project_delete',
+                        'message': project_data,
+                    }
+                )
+            return response
         else:
-            project.delete()
-            return Response("Deleted Successfully!!")
+            response = super().destroy(request, *args, **kwargs)
+            if response.status_code == 204:
+                project_data = {'id': project.id}
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    'project_group',
+                    {
+                        'type': 'project_delete',
+                        'message': project_data,
+                    }
+                )
+            return response
 
     @action(methods=['GET'], detail=False, url_path='columns')
     def project_admin_columns(self, request):
