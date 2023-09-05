@@ -19,11 +19,6 @@ router.register(
     basename='admin'
 )
 router.register(
-    'auth',
-    views.DepartmentEmployeeViewSet,
-    basename='auth'
-)
-router.register(
     'stats',
     views.StatsViewSet,
     basename='stats'

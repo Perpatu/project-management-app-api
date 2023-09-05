@@ -18,7 +18,11 @@ from department import serializers
 from file.serializers import DepStatsSerializer
 
 
-class DepartmentAdminViewSet(viewsets.ModelViewSet):
+class DepartmentAdminViewSet(mixins.CreateModelMixin,
+                             mixins.DestroyModelMixin,
+                             mixins.ListModelMixin,
+                             mixins.UpdateModelMixin,
+                             viewsets.GenericViewSet):
     """View for manage andmin department APIs"""
     serializer_class = serializers.DepartmentSerializer
     queryset = Department.objects.all()
@@ -28,14 +32,6 @@ class DepartmentAdminViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Create a new department"""
         serializer.save()
-
-
-class DepartmentEmployeeViewSet(viewsets.ReadOnlyModelViewSet):
-    """View for manage employee project APIs"""
-    serializer_class = serializers.DepartmentSerializer
-    queryset = Department.objects.all()
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
 
 
 class StatsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
