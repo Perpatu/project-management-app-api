@@ -6,6 +6,8 @@ from rest_framework import (
     viewsets,
     mixins,
 )
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -42,14 +44,34 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         file = self.get_object()
         file_path = MEDIA_ROOT + '/' + str(file.file)
         os.remove(file_path)
-        file.delete()
-        return Response('deleted')
-
+        response = super().destroy(request, *args, **kwargs)
+        if response.status_code == 204:
+            file_data = {'id': file.id}
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'file_group',
+                {
+                    'type': 'file_delete',
+                    'message': file_data,
+                }
+            )        
+            return response
+        return response
+    
     def create(self, request, *args, **kwargs):
         """Create file object"""
         serializer = serializers.FilesUploadSerializer(data=request.data)
         if serializer.is_valid():
             qs = serializer.save()
+            file_data = serializer.data
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'file_group',
+                {
+                    'type': 'file_add',
+                    'message': file_data,
+                }
+            )
             message = {'detail': qs, 'status': True}
             return Response(message, status=status.HTTP_201_CREATED)
         info = {'message': serializer.errors, 'status': False}
