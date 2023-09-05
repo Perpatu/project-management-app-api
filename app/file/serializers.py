@@ -140,6 +140,14 @@ class FileProjectSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class TestSerializer(serializers.ModelSerializer):
+    """Serializer for file in project"""    
+
+    class Meta:
+        model = File
+        fields = ['departments',]
+
+
 class ProjectFileSerializer(serializers.ModelSerializer):
     """Serializer for project"""
 
@@ -154,6 +162,15 @@ class ProjectFileSerializer(serializers.ModelSerializer):
         manager = first_name + ' ' + last_name
         response['manager'] = manager
         return response
+
+
+class FileManageSerializer(serializers.ModelSerializer):
+    """Serializer for manage file"""
+
+    class Meta:
+        model = File
+        fields = ['id', 'name', 'file', 'destiny', 'queue']
+        read_only_fields = ['id']
 
 
 class FileDepartmentSerializer(serializers.ModelSerializer):
@@ -177,12 +194,3 @@ class FileDepartmentSerializer(serializers.ModelSerializer):
                 queue_list.append(queue)
         response['queue'] = queue_list
         return response
-
-
-class FileManageSerializer(serializers.ModelSerializer):
-    """Serializer for manage file"""
-
-    class Meta:
-        model = File
-        fields = ['id', 'name', 'file', 'destiny', 'queue']
-        read_only_fields = ['id']

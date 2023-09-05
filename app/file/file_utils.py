@@ -24,7 +24,10 @@ def project_progress(project_id):
     all_task = QueueLogic.objects.filter(project=project_id).count()
     end_task = QueueLogic.objects.filter(project=project_id, end=True).count()
     project = Project.objects.get(id=project_id)
-    procent = (end_task / all_task) * 100
+    try:
+        procent = (end_task / all_task) * 100
+    except ZeroDivisionError:
+        procent = 0
     data = {'progress': int(procent)}
     serializer = ProjectProgressSerializer(project, data=data)
     if serializer.is_valid():

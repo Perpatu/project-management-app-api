@@ -164,6 +164,7 @@ class File(models.Model):
         related_name='files',
         on_delete=models.CASCADE
     )
+    departments = models.ManyToManyField(Department, related_name='files', blank=True)
     name = models.CharField(max_length=255, blank=True)
     destiny = models.CharField(
         max_length=30,
