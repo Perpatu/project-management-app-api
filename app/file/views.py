@@ -104,19 +104,7 @@ class FileAuthViewSet(viewsets.GenericViewSet):
         status = self.request.query_params.get('status')
         response = filter_file_department(int(dep_id), status)
         return response
-
-    @action(methods=['GET'], detail=False, url_path='department/count')
-    def file_counts_in_department(self, request):
-        """
-            Counts how many files are assigned to department
-            add params dep_id to url
-        """
-        dep_id = self.request.query_params.get('dep_id')
-        dep_id_int = int(dep_id)
-        queryset = self.queryset.filter(
-            queue__department__in=[dep_id_int]).count()
-        return Response(queryset)
-
+    
     @action(methods=['GET'], detail=False, url_path='search')
     def file_search_view(self, request):
         dep_id = self.request.query_params.get('dep_id')
