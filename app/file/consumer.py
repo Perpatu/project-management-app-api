@@ -15,7 +15,7 @@ class FileConsumer(AsyncWebsocketConsumer):
             "file_group",
             self.channel_name
         )
-
+# jkasdnsjakdnsjkand
     async def receive(self, text_data):
 
         text_data_json = json.loads(text_data)
