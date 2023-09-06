@@ -15,11 +15,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from app.settings import MEDIA_ROOT
-from .file_utils import (
-    project_progress,
-    search_file_department,
-    filter_file_department
-)
+from .file_utils import project_progress
 from file import serializers
 from department.serializers import DepartmentSerializer
 from core.models import (
@@ -45,19 +41,7 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         file = self.get_object()
         file_path = MEDIA_ROOT + '/' + str(file.file)
         os.remove(file_path)
-        response = super().destroy(request, *args, **kwargs)
-        if response.status_code == 204:
-            file_data = {'id': file.id}
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                'file_group',
-                {
-                    'type': 'file_delete',
-                    'message': file_data,
-                }
-            )        
-            return response
-        return response
+        super().destroy(request, *args, **kwargs)
     
     def create(self, request, *args, **kwargs):
         """Create file object"""
@@ -89,22 +73,7 @@ class FileAuthViewSet(viewsets.GenericViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @action(methods=['GET'], detail=False, url_path='department')
-    def department_view(self, request):
-        """Files assigned for department add params dep_id to url"""
-        dep_id = self.request.query_params.get('dep_id')
-        status = self.request.query_params.get('status')
-        response = filter_file_department(int(dep_id), status)
-        return response
     
-    @action(methods=['GET'], detail=False, url_path='search')
-    def file_search_view(self, request):
-        dep_id = self.request.query_params.get('dep_id')
-        search = self.request.query_params.get('search')
-        status = self.request.query_params.get('status')
-        response = search_file_department(dep_id, search, status)
-        return response
-
     @action(methods=['GET'], detail=False, url_path='columns-project')
     def file_auth_project_columns(self, request):
         """Columns for files at project"""
@@ -131,33 +100,6 @@ class FileAuthViewSet(viewsets.GenericViewSet):
         return Response(columns)
 
 
-class CommentFileViewSet(mixins.CreateModelMixin,
-                         mixins.DestroyModelMixin,
-                         viewsets.GenericViewSet):
-    """Manage comments file APIs"""
-    serializer_class = serializers.CommentFileDisplaySerializer
-    queryset = CommentFile.objects.all()
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_serializer_class(self):
-        """Return the serializer class for request."""
-        if self.action == 'create' or self.action == 'destroy':
-            return serializers.CommentFileManageSerializer
-        return self.serializer_class
-
-    def destroy(self, request, *args, **kwargs):
-        user = request.user
-        if not user.is_staff:
-            comment_object = self.get_object()
-            if user.id == comment_object.user.id:
-                return super().destroy(request, *args, **kwargs)
-            else:
-                info = {'message': 'This is not your comment'}
-                Response(info, status=status.HTTP_403_FORBIDDEN)
-        return super().destroy(request, *args, **kwargs)
-
-
 class QueueLogicViewSet(mixins.CreateModelMixin,
                         mixins.DestroyModelMixin,
                         mixins.UpdateModelMixin,
@@ -181,26 +123,26 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         """Creating logic and calculate project progress"""
-        ser_data = serializer.validated_data
-        file = File.objects.filter(id=ser_data['file'].id).first()
+        validated_data = serializer.validated_data
+        file = File.objects.filter(id=validated_data['file'].id).first()
         serializer_file = serializers.FileProjectSerializer(file, many=False)
         data = serializer_file.data
         deps_id = [dep['department'] for dep in data['queue']]        
 
-        if ser_data['department'].id in deps_id:
+        if validated_data['department'].id in deps_id:
             info = {'message': 'Queue with this department exists'}
             raise ValidationError(info)
         
-        deps_id.append(ser_data['department'].id)
+        deps_id.append(validated_data['department'].id)
         deps_id.sort()
-        ser_data['permission'] = False
+        validated_data['permission'] = False
 
-        if min(deps_id) == ser_data['department'].id:
-            ser_data['permission'] = True
+        if min(deps_id) == validated_data['department'].id:
+            validated_data['permission'] = True
             if len(deps_id) > 1:
                 for dep_id in deps_id[1:]:                    
                     logic = QueueLogic.objects.get(
-                        file=ser_data['file'].id, department=dep_id
+                        file=validated_data['file'].id, department=dep_id
                     )
                     logic.permission = False
                     logic.save()
@@ -208,18 +150,19 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
         super().perform_create(serializer)
 
         if len(deps_id) == 0:
-            deps_id.append(ser_data['department'].id)
+            deps_id.append(validated_data['department'].id)
 
-        data = {'departments': deps_id}
+        data = {'departments': deps_id}        
         serializer_file = serializers.TestSerializer(file, data=data)
 
         if serializer_file.is_valid():
             serializer_file.save()
-        project_progress(ser_data['project'].id)
+        project_progress(validated_data['project'].id)
     
     def create(self, request, *args, **kwargs):
         try:
-            queue_data = request.data
+            response = super().create(request, *args, **kwargs)
+            queue_data = {'id': response.data['id']}
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 'queue_group',
@@ -227,8 +170,8 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
                     'type': 'queue_add',
                     'message': queue_data,
                 }
-            )
-            return super().create(request, *args, **kwargs)
+            )            
+            return response
         except ValidationError as e:
             return Response(e.detail, status=status.HTTP_409_CONFLICT)
 
@@ -290,12 +233,45 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
             )
             logic.permission = True
             logic.save()
-        
-        super().destroy(request, *args, **kwargs)
-        
-        project_progress(queue_obj.project.id)
-        
-        info = {'message': f'Queue with id {queue_obj.id} has been deleted'}
-        
-        return Response(info)
 
+        response = super().destroy(request, *args, **kwargs)
+        if response.status_code == 204:
+            queue_data = {'id': queue_obj.id}
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'queue_group',
+                {
+                    'type': 'queue_delete',
+                    'message': queue_data,
+                }
+            )
+            project_progress(queue_obj.project.id)
+            info = {'message': f'Queue with id {queue_obj.id} has been deleted'}
+            return Response(info)
+
+
+class CommentFileViewSet(mixins.CreateModelMixin,
+                         mixins.DestroyModelMixin,
+                         viewsets.GenericViewSet):
+    """Manage comments file APIs"""
+    serializer_class = serializers.CommentFileDisplaySerializer
+    queryset = CommentFile.objects.all()
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        """Return the serializer class for request."""
+        if self.action == 'create' or self.action == 'destroy':
+            return serializers.CommentFileManageSerializer
+        return self.serializer_class
+
+    def destroy(self, request, *args, **kwargs):
+        user = request.user
+        if not user.is_staff:
+            comment_object = self.get_object()
+            if user.id == comment_object.user.id:
+                return super().destroy(request, *args, **kwargs)
+            else:
+                info = {'message': 'This is not your comment'}
+                Response(info, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)

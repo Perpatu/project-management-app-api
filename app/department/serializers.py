@@ -64,19 +64,23 @@ class FileDepartmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def to_representation(self, instance):
-        """deleting all unnecessary QueueLogic"""
         response = super().to_representation(instance)
-        dep_id = self.context.get('dep_id')
-        queue_list = []
-        for queue in response['queue']:
-            if queue['department'] == dep_id:
-                queue_list.append(queue)
-        response['queue'] = queue_list
+        dep_id = self.context.get('department_pk')
+        #print(dep_id)
+        response['queue'] = [queue_data for queue_data in response['queue'] if queue_data['department'] == 2]
         return response
+    
+class DepartmentDetailSerializer(serializers.ModelSerializer):
+    """Serializer for Department"""
+    files = FileDepartmentSerializer(many=True)
+    class Meta:
+        model = Department
+        fields = ['id', 'name', 'order', 'files']
+        read_only_fields = ['id']
+
 
 class DepartmentSerializer(serializers.ModelSerializer):
     """Serializer for Department"""
-    files = FileDepartmentSerializer(many=True)
 
     class Meta:
         model = Department

@@ -171,26 +171,3 @@ class FileManageSerializer(serializers.ModelSerializer):
         model = File
         fields = ['id', 'name', 'file', 'destiny', 'queue']
         read_only_fields = ['id']
-
-
-class FileDepartmentSerializer(serializers.ModelSerializer):
-    """Serializer for file in department"""
-    comments = CommentFileDisplaySerializer(many=True)
-    queue = QueueLogicToFileSerializer(many=True)
-    project = ProjectFileSerializer(many=False)
-
-    class Meta:
-        model = File
-        fields = ['id', 'name', 'file', 'comments', 'project', 'queue']
-        read_only_fields = ['id']
-
-    def to_representation(self, instance):
-        """deleting all unnecessary QueueLogic"""
-        response = super().to_representation(instance)
-        dep_id = self.context.get('dep_id')
-        queue_list = []
-        for queue in response['queue']:
-            if queue['department'] == dep_id:
-                queue_list.append(queue)
-        response['queue'] = queue_list
-        return response

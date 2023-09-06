@@ -25,7 +25,7 @@ class FileConsumer(AsyncWebsocketConsumer):
         if message_type == 'queue_add':
             await self.queue_add(message)
         elif message_type == 'file_delete':
-            await self.file_delete(message)
+            await self.queue_delete(message)
 
     async def queue_add(self, event):
         message = event['message']
@@ -33,7 +33,7 @@ class FileConsumer(AsyncWebsocketConsumer):
             'message': message,
         }))
 
-    async def file_delete(self, event):
+    async def queue_delete(self, event):
         message = event['message']
         await self.send(text_data=json.dumps({
             'message': message,

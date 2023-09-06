@@ -1,13 +1,7 @@
-from django.contrib.postgres.search import (
-    SearchVector,
-    SearchQuery,
-    SearchRank
-)
+from django.contrib.postgres.search import SearchVector
 from project.serializers import ProjectProgressSerializer
-from file.serializers import FileDepartmentSerializer
 from core.models import (
     Project,
-    File,
     QueueLogic,
 )
 from rest_framework.response import Response
@@ -35,52 +29,3 @@ def project_progress(project_id):
     info = {'message': serializer.errors, 'status': False}
     return Response(info, status=status.HTTP_400_BAD_REQUEST)
 
-
-def filter_file_department(dep_id, queue_status):
-    if queue_status == 'Active':
-        query = File.objects.filter(
-            queue__department__in=[dep_id],
-            queue__end=False,
-            )
-    elif queue_status == 'Completed':
-        query = File.objects.filter(
-            queue__department__in=[dep_id],
-            queue__end=True,
-        )
-    else:
-        info = {'message': 'There is no such file queue status'}
-        return Response(info, status=status.HTTP_404_NOT_FOUND)
-    serializer = FileDepartmentSerializer(
-            query, many=True, context={'dep_id': dep_id})
-    return Response(serializer.data)
-
-
-def search_file_department(dep_id, search, queue_status):
-    if queue_status == 'Active':
-        search_vector = vector()
-        search_query = SearchQuery(search)
-        query = File.objects.annotate(
-            search=search_vector,
-            rank=SearchRank(search_vector, search_query)
-            ).filter(
-                rank__gte=0.3,
-                queue__department__in=[dep_id],
-                queue__end=False,
-            ).order_by('-rank')
-    elif queue_status == 'Completed':
-        search_vector = vector()
-        search_query = SearchQuery(search)
-        query = File.objects.annotate(
-            search=search_vector,
-            rank=SearchRank(search_vector, search_query)
-            ).filter(
-                rank__gte=0.3,
-                queue__department__in=[dep_id],
-                queue__end=True,
-            ).order_by('-rank')
-    else:
-        info = {'message': 'There is no such file queue status'}
-        return Response(info, status=status.HTTP_404_NOT_FOUND)
-    serializer = FileDepartmentSerializer(
-            query, many=True, context={'dep_id': dep_id})
-    return Response(serializer.data)
