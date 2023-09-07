@@ -19,9 +19,9 @@ router.register(
     basename='admin'
 )
 router.register(
-    'stats',
-    views.StatsViewSet,
-    basename='stats'
+    'auth',
+    views.DepartmentAuthViewSet,
+    basename='auth'
 )
 app_name = 'department'
 

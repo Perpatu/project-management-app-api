@@ -63,16 +63,11 @@ class FileDepartmentSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'file', 'comments', 'project', 'queue']
         read_only_fields = ['id']
 
-    def to_representation(self, instance):
-        response = super().to_representation(instance)
-        dep_id = self.context.get('department_pk')
-        #print(dep_id)
-        response['queue'] = [queue_data for queue_data in response['queue'] if queue_data['department'] == 2]
-        return response
-    
+
 class DepartmentDetailSerializer(serializers.ModelSerializer):
     """Serializer for Department"""
     files = FileDepartmentSerializer(many=True)
+
     class Meta:
         model = Department
         fields = ['id', 'name', 'order', 'files']

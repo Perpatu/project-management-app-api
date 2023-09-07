@@ -110,7 +110,7 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-class DepStatsSerializer(serializers.ModelSerializer):
+class DepartmentStatsSerializer(serializers.ModelSerializer):
     """Serializer for stats departments"""
 
     department = DepartmentSerializer(many=False)
@@ -141,7 +141,7 @@ class FileProjectSerializer(serializers.ModelSerializer):
 
 
 class TestSerializer(serializers.ModelSerializer):
-    """Serializer for file in project"""    
+    """Serializer for file in project"""
 
     class Meta:
         model = File

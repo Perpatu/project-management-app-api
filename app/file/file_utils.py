@@ -28,4 +28,3 @@ def project_progress(project_id):
         serializer.save()
     info = {'message': serializer.errors, 'status': False}
     return Response(info, status=status.HTTP_400_BAD_REQUEST)
-
