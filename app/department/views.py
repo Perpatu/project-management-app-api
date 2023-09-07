@@ -54,6 +54,7 @@ class DepartmentAuthViewSet(mixins.RetrieveModelMixin,
         return super().get_queryset()
 
     def retrieve(self, request, *args, **kwargs):
+        """Returns a department with assinged files with queuelogic"""
         department = self.get_object()
         department_pk = department.pk
         response = super().retrieve(request, *args, **kwargs)
