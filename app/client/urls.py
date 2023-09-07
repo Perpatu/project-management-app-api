@@ -12,7 +12,7 @@ from client import views
 
 
 router = DefaultRouter()
-router.register('clients', views.ClientViewSet)
+router.register('admin', views.ClientViewSet)
 
 app_name = 'client'
 
