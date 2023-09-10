@@ -7,6 +7,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from core.models import Project
 from project.serializers import ProjectSerializer
+from django.core.paginator import Paginator
+
+import math
 
 
 def vector():
@@ -19,126 +22,93 @@ def vector():
     return search_vector
 
 
-def search_auth(search_phase, project_status):
-    forbidden_status = {'Completed', 'Suspended', 'My Active',
-                        'My Suspended', 'My Completed'}
-    if project_status in forbidden_status:
-        return Response({'message': 'You do not have permissions'},
-                        status=status.HTTP_403_FORBIDDEN)
-    search_vector = vector()
-    search_query = SearchQuery(search_phase)
+def paginate(page_size, page_number, query):
+    paginator = Paginator(query, page_size)
+    page_obj = paginator.get_page(page_number)
+    serializer = ProjectSerializer(page_obj, many=True)
+    total_items = paginator.count
+    max_pages = math.ceil(total_items / int(page_size))
+    ser_data = serializer.data if max_pages >= int(page_number) else {}
+    data = {
+        'data': ser_data,
+        'totalItems': total_items
+    }
+    return data
 
+
+def get_project_status(project_status, user=None):
     if project_status == 'Active':
-        query = Project.objects.annotate(
-            search=search_vector,
-            rank=SearchRank(search_vector, search_query)
-        ).filter(
-            rank__gte=0.1,
-            status__in=['Started', 'In design']
-        ).order_by('-rank')
+        status_filter = ['Started', 'In design']
+    elif project_status == 'My Active':
+        status_filter = ['Started', 'In design']
+    elif project_status == 'My Completed':
+        status_filter = ['Completed']
+    elif project_status == 'My Suspended':
+        status_filter = ['Suspended']
+    elif project_status == 'Suspended':
+        status_filter = ['Suspended']
+    elif project_status == 'Completed':
+        status_filter = ['Completed']
     else:
-        return Response({'message': 'There is no such project status'},
-                        status=status.HTTP_404_NOT_FOUND)
-    serializer = ProjectSerializer(query, many=True)
-    return Response(serializer.data)
+        status_filter = None
+
+    if status_filter is None:
+        return None
+
+    if user and not user.is_staff:
+        if project_status.startswith('My'):
+            status_filter = None
+
+    return status_filter
 
 
-def search_admin(search_phase, project_status, user):
-    if not user.is_staff:
-        return Response({'message': 'You do not have permissions'},
-                        status=status.HTTP_403_FORBIDDEN)
+def search_projects(search_phase, project_status, user=None):
+    status_filter = get_project_status(project_status, user)
+
+    if status_filter is None:
+        return Response({'message': 'There is no such project status \
+                          or you do not have permission'},
+                            status=status.HTTP_404_NOT_FOUND)
+
     search_vector = vector()
     search_query = SearchQuery(search_phase)
+
     project_queryset = Project.objects.annotate(
         search=search_vector,
         rank=SearchRank(search_vector, search_query)
     ).filter(rank__gte=0.1)
-    if project_status == 'My Active':
-        project_queryset = project_queryset.filter(
-            manager__id=user.id,
-            status__in=['Started', 'In design']
-        )
-    elif project_status == 'My Completed':
-        project_queryset = project_queryset.filter(
-            manager__id=user.id,
-            status='Completed'
-        )
-    elif project_status == 'My Suspended':
-        project_queryset = project_queryset.filter(
-            manager__id=user.id,
-            status='Suspended'
-        )
-    elif project_status == 'Active':
-        project_queryset = project_queryset.filter(
-            status__in=['Started', 'In design']
-        )
-    elif project_status == 'Completed':
-        project_queryset = project_queryset.filter(
-            status='Completed'
-        )
-    elif project_status == 'Suspended':
-        project_queryset = project_queryset.filter(
-            status='Suspended'
-        )
-    else:
-        return Response({'message': 'There is no such project status'},
-                        status=status.HTTP_404_NOT_FOUND)
+
+    if status_filter:
+        project_queryset = project_queryset.filter(status__in=status_filter)
+
+    if user and not user.is_staff:
+        if project_status.startswith('My'):
+            project_queryset = project_queryset.filter(manager__id=user.id)
+
     projects = project_queryset.order_by('-rank')
+
     serializer = ProjectSerializer(projects, many=True)
     return Response(serializer.data)
 
 
-def filter_auth(queryset, project_status):
-    forbidden_status = {'Completed', 'Suspended', 'My Active',
-                        'My Suspended', 'My Completed'}
-    if project_status not in forbidden_status:
-        if project_status == 'Active':
-            query = queryset.filter(
-                status__in=['Started', 'In design']
-            )
-            serializer = ProjectSerializer(query, many=True)
-            return Response(serializer.data)
-        info = {'message': 'There is no such project status'}
-        return Response(info, status=status.HTTP_404_NOT_FOUND)
-    info = {'message': 'you do not have permissions'}
-    return Response(info, status=status.HTTP_403_FORBIDDEN)
+def filter_projects(queryset, params, user=None):
+    project_status = params.get('status')
+    status_filter = get_project_status(project_status, user)
 
+    if status_filter is None:
+        return Response({'message': 'There is no such project status'}, status=status.HTTP_404_NOT_FOUND)
 
-def filter_admin(queryset, project_status, user):
-    if not user.is_staff:
-        info = {'message': 'You do not have permission to \
-                perform this action.'}
-        return Response(info, status=status.HTTP_403_FORBIDDEN)
-
-    if project_status == 'My_Active':
-        query = queryset.filter(
-            manager=user.id,
-            status__in=['Started', 'In design']
-        )
-    elif project_status == 'My Suspended':
-        query = queryset.filter(
-            manager=user.id,
-            status='Suspended'
-        )
-    elif project_status == 'My Completed':
-        query = queryset.filter(
-            manager=user.id,
-            status='Completed'
-        )
-    elif project_status == 'Active':
-        query = queryset.filter(
-            status__in=['Started', 'In design']
-        )
-    elif project_status == 'Suspended':
-        query = queryset.filter(
-            status='Suspended'
-        )
-    elif project_status == 'Completed':
-        query = queryset.filter(
-            status='Completed'
-        )
+    if status_filter and project_status.startswith('My'):
+        queryset = queryset.filter(manager=user.id, status__in=status_filter)
     else:
-        info = {'message': 'There is no such project status'}
-        return Response(info, status=status.HTTP_404_NOT_FOUND)
-    serializer = ProjectSerializer(query, many=True)
+        queryset = queryset.filter(status__in=status_filter)
+
+    if project_status in ['Completed', 'Suspended', 'My Suspended', 'My Completed']:
+        page_size = params.get('page_size')
+        page_number = params.get('page_number')
+        data = paginate(page_size, page_number, queryset)
+        return Response(data)
+
+    serializer = ProjectSerializer(queryset, many=True)
     return Response(serializer.data)
+   

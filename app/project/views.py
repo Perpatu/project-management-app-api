@@ -15,10 +15,8 @@ from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .project_utils import (
-    search_admin,
-    search_auth,
-    filter_admin,
-    filter_auth
+    filter_projects,
+    search_projects
 )
 from core.models import (
     Project,
@@ -119,12 +117,10 @@ class ProjectAuthViewSet(mixins.RetrieveModelMixin,
     def project_status_view(self, request):
         """Project view for auth and admin users"""
         user = request.user
-        project_status = self.request.query_params.get('status')
-        if user.is_staff:
-            response = filter_admin(self.queryset, project_status, user)
-            return response
-        response = filter_auth(self.queryset, project_status)
+        params = self.request.query_params
+        response = filter_projects(self.queryset, params, user)
         return response
+
 
     @action(methods=['GET'], detail=False, url_path='search')
     def project_search_view(self, request):
@@ -132,10 +128,7 @@ class ProjectAuthViewSet(mixins.RetrieveModelMixin,
         user = request.user
         search_word = self.request.query_params.get('search')
         project_status = self.request.query_params.get('status')
-        if user.is_staff:
-            response = search_admin(search_word, project_status, user)
-            return response
-        response = search_auth(search_word, project_status)
+        response = search_projects(search_word, project_status, user)
         return response
 
     @action(methods=['GET'], detail=False, url_path='columns')
