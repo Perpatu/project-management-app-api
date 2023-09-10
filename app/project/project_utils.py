@@ -68,7 +68,7 @@ def search_projects(search_phase, project_status, user=None):
     if status_filter is None:
         return Response({'message': 'There is no such project status \
                           or you do not have permission'},
-                            status=status.HTTP_404_NOT_FOUND)
+                        status=status.HTTP_404_NOT_FOUND)
 
     search_vector = vector()
     search_query = SearchQuery(search_phase)
@@ -96,14 +96,20 @@ def filter_projects(queryset, params, user=None):
     status_filter = get_project_status(project_status, user)
 
     if status_filter is None:
-        return Response({'message': 'There is no such project status'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {'message': 'There is no such project status'},
+            status=status.HTTP_404_NOT_FOUND
+        )
 
     if status_filter and project_status.startswith('My'):
         queryset = queryset.filter(manager=user.id, status__in=status_filter)
     else:
         queryset = queryset.filter(status__in=status_filter)
 
-    if project_status in ['Completed', 'Suspended', 'My Suspended', 'My Completed']:
+    status_paginate = ['Completed', 'Suspended',
+                       'My Suspended', 'My Completed']
+
+    if project_status in status_paginate:
         page_size = params.get('page_size')
         page_number = params.get('page_number')
         data = paginate(page_size, page_number, queryset)
@@ -111,4 +117,3 @@ def filter_projects(queryset, params, user=None):
 
     serializer = ProjectSerializer(queryset, many=True)
     return Response(serializer.data)
-   

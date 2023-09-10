@@ -15,7 +15,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from app.settings import MEDIA_ROOT
-from .file_utils import project_progress
+from .file_utils import project_progress, filter_files
 from file import serializers
 from department.serializers import DepartmentSerializer
 from core.models import (
@@ -97,6 +97,16 @@ class FileAuthViewSet(viewsets.GenericViewSet):
                    'task', 'manager',
                    'project', 'comments']
         return Response(columns)
+
+    @action(methods=['GET'], detail=False, url_path='department')
+    def file_department_(self, request):
+        """
+            Returns info about department given it params dep_id
+            and all files assigned to it
+        """
+        params = self.request.query_params
+        data = filter_files(params)
+        return Response(data)
 
 
 class QueueLogicViewSet(mixins.CreateModelMixin,

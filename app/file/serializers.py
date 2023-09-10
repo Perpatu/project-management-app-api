@@ -10,7 +10,6 @@ from core.models import (
     QueueLogic
 )
 from user.serializers import UserNestedSerializer
-from department.serializers import DepartmentSerializer
 
 
 def validate_file_extension(file_extension):
@@ -110,16 +109,6 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-class DepartmentStatsSerializer(serializers.ModelSerializer):
-    """Serializer for stats departments"""
-
-    department = DepartmentSerializer(many=False)
-
-    class Meta:
-        model = QueueLogic
-        fields = ['department',]
-
-
 class QueueLogicToFileSerializer(serializers.ModelSerializer):
     """Serializer for queue logic in File"""
 
@@ -171,3 +160,25 @@ class FileManageSerializer(serializers.ModelSerializer):
         model = File
         fields = ['id', 'name', 'file', 'destiny', 'queue']
         read_only_fields = ['id']
+
+
+class FileDepartmentSerializer(serializers.ModelSerializer):
+    """Serializer for file in department"""
+    comments = CommentFileDisplaySerializer(many=True)
+    queue = QueueLogicToFileSerializer(many=True)
+    project = ProjectFileSerializer(many=False)
+
+    class Meta:
+        model = File
+        fields = ['id', 'name', 'file', 'comments', 'project', 'queue']
+        read_only_fields = ['id']
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        dep_id = self.context.get('dep_id')
+        filtered_queue = [
+            queue_data for queue_data in response['queue']
+            if queue_data['department'] == dep_id
+        ]
+        response['queue'] = filtered_queue
+        return response

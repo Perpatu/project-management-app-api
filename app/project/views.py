@@ -115,16 +115,15 @@ class ProjectAuthViewSet(mixins.RetrieveModelMixin,
 
     @action(methods=['GET'], detail=False, url_path='status')
     def project_status_view(self, request):
-        """Project view for auth and admin users"""
+        """Project view"""
         user = request.user
         params = self.request.query_params
         response = filter_projects(self.queryset, params, user)
         return response
 
-
     @action(methods=['GET'], detail=False, url_path='search')
     def project_search_view(self, request):
-        """Search project for auth and admin users"""
+        """Search project"""
         user = request.user
         search_word = self.request.query_params.get('search')
         project_status = self.request.query_params.get('status')

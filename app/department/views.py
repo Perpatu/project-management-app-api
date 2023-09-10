@@ -14,7 +14,6 @@ from core.models import (
     QueueLogic,
 )
 from department import serializers
-from file.serializers import DepartmentStatsSerializer
 
 
 class DepartmentAdminViewSet(mixins.CreateModelMixin,
@@ -37,37 +36,10 @@ class DepartmentAdminViewSet(mixins.CreateModelMixin,
 class DepartmentAuthViewSet(mixins.RetrieveModelMixin,
                             viewsets.GenericViewSet):
     """View for auth users department APIs"""
-    serializer_class = serializers.DepartmentDetailSerializer
-    queryset = Department.objects.all()
+    serializer_class = serializers.DepartmentStatsSerializer
+    queryset = QueueLogic.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-
-    def get_serializer_class(self):
-        """Return the serializer class for request."""
-        if self.action == 'list':
-            return DepartmentStatsSerializer
-        return super().get_serializer_class()
-
-    def get_queryset(self):
-        if self.action == 'list':
-            return QueueLogic.objects.all()
-        return super().get_queryset()
-
-    def retrieve(self, request, *args, **kwargs):
-        """Returns a department with assinged files with queuelogic"""
-        department = self.get_object()
-        department_pk = department.pk
-        response = super().retrieve(request, *args, **kwargs)
-        data = response.data
-        filter_data = data.copy()
-        filter_data["files"] = []
-
-        for file_data in data.get("files", []):
-            filter_file = file_data.copy()
-            filter_file["queue"] = [queue_data for queue_data in file_data.get(
-                "queue", []) if queue_data.get("department") == department_pk]
-            filter_data["files"].append(filter_file)
-        return Response(filter_data)
 
     def list(self, request, *args, **kwargs):
         """Returns a list of how much files are assigned to department"""
