@@ -46,19 +46,21 @@ class DepartmentAuthViewSet(mixins.RetrieveModelMixin,
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
         data = serializer.data
-        department_counts = {}
+        dep_info_dict = {}
 
         for item in data:
-            department_name = item["department"]["name"]
-            if department_name in department_counts:
-                department_counts[department_name] += 1
+            dep_info = item["department"]
+            dep_id = dep_info["id"]
+            dep_name = dep_info["name"]
+            
+            if dep_name in dep_info_dict:
+                dep_info_dict[dep_name]["quantity"] += 1
             else:
-                department_counts[department_name] = 1
+                dep_info_dict[dep_name] = {
+                    "id": dep_id,
+                    "quantity": 1,
+                    "name": dep_name
+                }
 
-        result = [
-            {
-                "quantity": count,
-                "department": department_name
-            } for department_name, count in department_counts.items()
-        ]
+        result = list(dep_info_dict.values())
         return Response(result)

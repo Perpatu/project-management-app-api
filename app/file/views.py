@@ -160,12 +160,6 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
 
         if len(deps_id) == 0:
             deps_id.append(validated_data['department'].id)
-
-        data = {'departments': deps_id}
-        serializer_file = serializers.TestSerializer(file, data=data)
-
-        if serializer_file.is_valid():
-            serializer_file.save()
         project_progress(validated_data['project'].id)
 
     def create(self, request, *args, **kwargs):
