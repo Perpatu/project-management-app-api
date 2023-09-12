@@ -93,7 +93,7 @@ class FileAuthViewSet(viewsets.GenericViewSet):
         deps_name = []
         for dep in deps_ser.data:
             deps_name.append(dep['name'])
-        columns = ['view', 'filename',
+        columns = ['view', 'name',
                    'task', 'manager',
                    'project', 'comments']
         return Response(columns)
@@ -117,18 +117,24 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
     serializer_class = serializers.QueueLogicManageSerializer
     queryset = QueueLogic.objects.all()
     authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminUser]
+    
+    """def get_permissions(self):
+        if self.action == 'update' or self.request.method == 'PATCH':
+            return [IsAuthenticated()]
+        else:
+            return [IsAdminUser()]"""
 
     def get_permissions(self):
         if self.action == 'update' or self.request.method == 'PATCH':
             return [IsAuthenticated()]
-        else:
-            return [IsAdminUser()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         """Return the serializer class for request."""
         if self.action == 'update' or self.request.method == 'PATCH':
             return serializers.QueueLogicUpdateSerializer
-        return self.serializer_class
+        return super().get_serializer_class()
 
     def perform_create(self, serializer):
         """Creating logic and calculate project progress"""

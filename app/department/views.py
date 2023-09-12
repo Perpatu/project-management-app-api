@@ -7,6 +7,7 @@ from rest_framework import (
     mixins,
 )
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from core.models import (
@@ -34,6 +35,7 @@ class DepartmentAdminViewSet(mixins.CreateModelMixin,
 
 
 class DepartmentAuthViewSet(mixins.RetrieveModelMixin,
+                            mixins.ListModelMixin,
                             viewsets.GenericViewSet):
     """View for auth users department APIs"""
     serializer_class = serializers.DepartmentStatsSerializer
@@ -41,7 +43,18 @@ class DepartmentAuthViewSet(mixins.RetrieveModelMixin,
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def list(self, request, *args, **kwargs):
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return serializers.DepartmentListSerializer
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return Department.objects.all()
+        return super().get_queryset()
+
+    @action(methods=['GET'], detail=False, url_path='stats')
+    def department_stats(self, request):
         """Returns a list of how much files are assigned to department"""
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
