@@ -1,5 +1,4 @@
 import math
-from django.contrib.postgres.search import SearchVector
 from django.core.paginator import Paginator
 from project.serializers import ProjectProgressSerializer
 from department.serializers import DepartmentSerializer
@@ -12,12 +11,6 @@ from core.models import (
 )
 from rest_framework.response import Response
 from rest_framework import status
-
-
-def vector():
-    search_vector = SearchVector('name', weight='B') + \
-                SearchVector('file', weight="A")
-    return search_vector
 
 
 def get_queue_status(queue_status):
@@ -70,9 +63,9 @@ def project_progress(project_id):
 
 
 def filter_files(params):
-    project_status = params.get('status')
+    queue_status = params.get('status')
     dep_id = params.get('dep_id')
-    status_filter = get_queue_status(project_status)
+    status_filter = get_queue_status(queue_status)
 
     if status_filter is None:
         return Response(
@@ -114,3 +107,38 @@ def filter_files(params):
             'files': files
         }
         return data
+
+
+def search_files(params):
+    queue_status = params.get('status')
+    search_phase = params.get('search')
+    dep_id = params.get('dep_id')
+    status_filter = get_queue_status(queue_status)
+
+    if status_filter is None:
+        return Response({'message': 'There is no such file status \
+                          or you do not have permission'},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    query_dep = Department.objects.get(id=int(dep_id))
+    serializer_dep = DepartmentSerializer(query_dep, many=False)
+    department = serializer_dep.data
+
+    query_file = File.objects.filter(
+        name__icontains=search_phase,
+        queue__department=int(dep_id),
+        queue__end=False
+    )
+
+    context = {'dep_id': int(dep_id)}
+    serializer_file = serializers.FileDepartmentSerializer(
+        query_file,
+        many=True,
+        context=context
+    )
+    files = serializer_file.data
+    data = {
+        'department': department,
+        'files': files
+    }
+    return data
