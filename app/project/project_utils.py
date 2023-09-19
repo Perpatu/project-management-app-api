@@ -39,11 +39,11 @@ def paginate(page_size, page_number, query):
 def get_project_status(project_status, user=None):
     if project_status == 'Active':
         status_filter = ['Started', 'In design']
-    elif project_status == 'My Active':
+    elif project_status == 'My_Active':
         status_filter = ['Started', 'In design']
-    elif project_status == 'My Completed':
+    elif project_status == 'My_Completed':
         status_filter = ['Completed']
-    elif project_status == 'My Suspended':
+    elif project_status == 'My_Suspended':
         status_filter = ['Suspended']
     elif project_status == 'Suspended':
         status_filter = ['Suspended']

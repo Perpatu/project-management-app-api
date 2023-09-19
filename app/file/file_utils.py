@@ -127,7 +127,7 @@ def search_files(params):
     query_file = File.objects.filter(
         name__icontains=search_phase,
         queue__department=int(dep_id),
-        queue__end=False
+        queue__end=not status_filter
     )
 
     context = {'dep_id': int(dep_id)}

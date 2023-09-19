@@ -112,6 +112,7 @@ class Project(models.Model):
         choices=ProjectStatus.choices
     )
     number = models.CharField(max_length=255, blank=False)
+    order_number = models.CharField(max_length=255, blank=True)
     secretariat = models.BooleanField(default=True)
     invoiced = models.CharField(
         max_length=30,

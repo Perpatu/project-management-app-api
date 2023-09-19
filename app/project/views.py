@@ -94,8 +94,9 @@ class ProjectAdminViewSet(mixins.CreateModelMixin,
     @action(methods=['GET'], detail=False, url_path='columns')
     def project_admin_columns(self, request):
         """Columns for admin"""
-        columns = ['number', 'start', 'deadline',
-                   'status', 'progress', 'priority', 'options']
+        columns = ['number', 'order_number', 'start',
+                   'deadline', 'status', 'progress',
+                   'priority', 'manager', 'options']
         return Response(columns)
 
 
@@ -133,9 +134,9 @@ class ProjectAuthViewSet(mixins.RetrieveModelMixin,
     @action(methods=['GET'], detail=False, url_path='columns')
     def project_auth_columns(self, request):
         """Columns for auth users"""
-        columns = ['number', 'start', 'deadline',
-                   'status', 'progress', 'priority',
-                   'manager']
+        columns = ['number', 'order_number', 'start',
+                   'deadline', 'status', 'progress',
+                   'priority', 'manager']
         return Response(columns)
 
 
