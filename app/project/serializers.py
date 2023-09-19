@@ -54,6 +54,7 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             'deadline',
             'priority',
             'number',
+            'order_number',
         ]
         read_only_fields = ['id']
 
@@ -73,6 +74,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'priority',
             'status',
             'number',
+            'order_number',
             'secretariat',
             'invoiced',
         ]
@@ -107,4 +109,4 @@ class ProjectProgressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'progress']
+        fields = ['id', 'progress', 'status']
