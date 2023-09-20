@@ -61,8 +61,12 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         deps_name = []
         for dep in deps_ser.data:
             deps_name.append(dep['name'])
-        columns = ['view', 'filename', 'options']
-        result = columns[0:2] + deps_name + [columns[2]]
+        static = ['view', 'name', 'options']
+        merged = static[0:2] + deps_name + [static[2]]
+        result = {
+            'departments': deps_ser.data,
+            'merged': merged
+        }
         return Response(result)
 
 

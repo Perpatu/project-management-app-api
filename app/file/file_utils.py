@@ -54,7 +54,7 @@ def project_progress(project_id):
         procent = (end_task / all_task) * 100
     except ZeroDivisionError:
         procent = 0
-    if all_task > 0 and procent == 0:
+    if all_task > 0 and procent >= 0 and procent < 100:
         data = {'status': 'Started'}
         serializer = ProjectProgressSerializer(project, data=data)
         if serializer.is_valid():

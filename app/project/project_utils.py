@@ -1,26 +1,11 @@
-from django.contrib.postgres.search import (
-    SearchVector,
-    SearchQuery,
-    SearchRank
-)
 from rest_framework.response import Response
 from rest_framework import status
 from core.models import Project
 from project.serializers import ProjectSerializer
 from django.core.paginator import Paginator
+from django.db.models import Q
 
 import math
-
-
-def vector():
-    search_vector = SearchVector('number', weight='A') + \
-        SearchVector('manager__first_name', weight='A') + \
-        SearchVector('manager__last_name', weight='A') + \
-        SearchVector('client__name', weight='A') + \
-        SearchVector('deadline', weight="B") + \
-        SearchVector('priority', weight="C")
-    return search_vector
-
 
 def paginate(page_size, page_number, query):
     paginator = Paginator(query, page_size)
@@ -28,86 +13,61 @@ def paginate(page_size, page_number, query):
     serializer = ProjectSerializer(page_obj, many=True)
     total_items = paginator.count
     max_pages = math.ceil(total_items / int(page_size))
-    ser_data = serializer.data if max_pages >= int(page_number) else {}
     data = {
-        'data': ser_data,
+        'data': serializer.data if max_pages >= int(page_number) else {},
         'totalItems': total_items
     }
     return data
 
-
 def get_project_status(project_status, user=None):
-    if project_status == 'Active':
-        status_filter = ['Started', 'In design']
-    elif project_status == 'My_Active':
-        status_filter = ['Started', 'In design']
-    elif project_status == 'My_Completed':
-        status_filter = ['Completed']
-    elif project_status == 'My_Suspended':
-        status_filter = ['Suspended']
-    elif project_status == 'Suspended':
-        status_filter = ['Suspended']
-    elif project_status == 'Completed':
-        status_filter = ['Completed']
-    else:
-        status_filter = None
+    status_mapping = {
+        'Active': ['Started', 'In design'],
+        'My_Active': ['Started', 'In design'],
+        'My_Completed': ['Completed'],
+        'My_Suspended': ['Suspended'],
+        'Suspended': ['Suspended'],
+        'Completed': ['Completed'],
+    }
+
+    status_filter = status_mapping.get(project_status)
 
     if status_filter is None:
         return None
 
-    if user and not user.is_staff:
-        if project_status.startswith('My'):
-            status_filter = None
+    if user and not user.is_staff and project_status.startswith('My'):
+        status_filter = None
 
     return status_filter
 
-
-def search_projects(search_phase, project_status, user=None):
-    status_filter = get_project_status(project_status, user)
+def search_projects(params, user):
+    status = params.get('status')
+    search = params.get('search')
+    status_filter = get_project_status(status, user)
 
     if status_filter is None:
-        return Response({'message': 'There is no such project status \
-                          or you do not have permission'},
-                        status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'There is no such project status or you do not have permission'}, status=status.HTTP_404_NOT_FOUND)
 
-    search_vector = vector()
-    search_query = SearchQuery(search_phase)
+    queryset = Project.objects.filter(Q(status__in=status_filter), Q(number__icontains=search))
 
-    project_queryset = Project.objects.annotate(
-        search=search_vector,
-        rank=SearchRank(search_vector, search_query)
-    ).filter(rank__gte=0.1)
+    if user and not user.is_staff and status.startswith('My'):
+        queryset = queryset.filter(manager=user)
 
-    if status_filter:
-        project_queryset = project_queryset.filter(status__in=status_filter)
-
-    if user and not user.is_staff:
-        if project_status.startswith('My'):
-            project_queryset = project_queryset.filter(manager__id=user.id)
-
-    projects = project_queryset.order_by('-rank')
-
-    serializer = ProjectSerializer(projects, many=True)
+    serializer = ProjectSerializer(queryset, many=True)
     return Response(serializer.data)
-
 
 def filter_projects(queryset, params, user=None):
     project_status = params.get('status')
     status_filter = get_project_status(project_status, user)
 
     if status_filter is None:
-        return Response(
-            {'message': 'There is no such project status'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({'message': 'There is no such project status'}, status=status.HTTP_404_NOT_FOUND)
 
     if status_filter and project_status.startswith('My'):
-        queryset = queryset.filter(manager=user.id, status__in=status_filter)
+        queryset = queryset.filter(manager=user, status__in=status_filter)
     else:
         queryset = queryset.filter(status__in=status_filter)
 
-    status_paginate = ['Completed', 'Suspended',
-                       'My Suspended', 'My Completed']
+    status_paginate = ['Completed', 'Suspended', 'My Suspended', 'My Completed']
 
     if project_status in status_paginate:
         page_size = params.get('page_size')
