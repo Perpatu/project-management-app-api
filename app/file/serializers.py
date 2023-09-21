@@ -125,7 +125,7 @@ class FileProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ['id', 'name', 'file', 'comments', 'queue']
+        fields = ['id', 'name', 'file', 'comments', 'queue', 'new']
         read_only_fields = ['id']
 
 

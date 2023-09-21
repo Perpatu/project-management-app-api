@@ -41,7 +41,10 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         file = self.get_object()
         file_path = MEDIA_ROOT + '/' + str(file.file)
         os.remove(file_path)
-        super().destroy(request, *args, **kwargs)
+        file_data = serializers.FileProjectSerializer(file).data
+        if len(file_data['queue']) > 0:
+            project_progress(file_data['queue'][0]['project'])
+        return super().destroy(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         """Create file object"""
@@ -85,18 +88,17 @@ class FileAuthViewSet(viewsets.GenericViewSet):
         deps_name = []
         for dep in deps_ser.data:
             deps_name.append(dep['name'])
-        columns = ['view', 'filename', 'comments']
-        result = columns[0:2] + deps_name + [columns[2]]
+        columns = ['view', 'name', 'comments']
+        merged = columns[0:2] + deps_name + [columns[2]]
+        result = {
+            'departments': deps_ser.data,
+            'merged': merged
+        }
         return Response(result)
 
     @action(methods=['GET'], detail=False, url_path='columns-department')
     def file_auth_department_columns(self, request):
-        """Columns for files at project"""
-        deps = Department.objects.all()
-        deps_ser = DepartmentSerializer(deps, many=True)
-        deps_name = []
-        for dep in deps_ser.data:
-            deps_name.append(dep['name'])
+        """Columns for files at department"""
         columns = ['view', 'name',
                    'task', 'manager',
                    'project', 'comments']
@@ -195,6 +197,9 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
                     'message': queue_data,
                 }
             )
+            file = File.objects.get(id=response.data['file'])
+            file.new = False
+            file.save()
             return response
         except ValidationError as e:
             return Response(e.detail, status=status.HTTP_409_CONFLICT)
@@ -232,7 +237,6 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
                 logic.start = False
                 logic.paused = False
                 logic.save()
-
         super().update(request, *args, **kwargs)
 
         info = {'message': f'Queue logic with id \

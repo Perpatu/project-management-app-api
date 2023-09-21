@@ -179,6 +179,7 @@ class File(models.Model):
     )
     file = models.FileField(upload_to=file_path, blank=False)
     date_add = models.DateField(default=timezone.now)
+    new = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['name']
