@@ -47,7 +47,10 @@ def search_projects(params, user):
     if status_filter is None:
         return Response({'message': 'There is no such project status or you do not have permission'}, status=status.HTTP_404_NOT_FOUND)
 
-    queryset = Project.objects.filter(Q(status__in=status_filter), Q(number__icontains=search))
+    queryset = Project.objects.filter(
+        Q(status__in=status_filter) &
+        (Q(number__icontains=search) | Q(name__icontains=search) | Q(order_number__icontains=search))
+    )
 
     if user and not user.is_staff and status.startswith('My'):
         queryset = queryset.filter(manager=user)

@@ -56,7 +56,7 @@ class FilesUploadSerializer(serializers.ModelSerializer):
                     file=file, project=project, user=user,
                     destiny=destiny, name=file.name
                 )
-                fileurl = f'{file_obj.file.url}'
+                fileurl = f'{file_obj.name}'
                 file_list.append(fileurl)
             else:
                 raise serializers.ValidationError('Wrong file format')
@@ -77,7 +77,7 @@ class CommentFileDisplaySerializer(serializers.ModelSerializer):
         last_name = UserNestedSerializer(instance.user).data['last_name']
         response['user'] = {
             'id': UserNestedSerializer(instance.user).data['id'],
-            'name': first_name + ' ' + last_name
+            'name': first_name[0].upper() + '. ' + last_name
         }
         return response
 
@@ -125,7 +125,7 @@ class FileProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ['id', 'name', 'file', 'comments', 'queue', 'new']
+        fields = ['id', 'name', 'file', 'comments', 'queue', 'destiny', 'new']
         read_only_fields = ['id']
 
 
@@ -148,7 +148,7 @@ class ProjectFileSerializer(serializers.ModelSerializer):
         response = super().to_representation(instance)
         first_name = UserNestedSerializer(instance.manager).data['first_name']
         last_name = UserNestedSerializer(instance.manager).data['last_name']
-        manager = first_name + ' ' + last_name
+        manager = first_name[0].upper() + '. ' + last_name
         response['manager'] = manager
         return response
 

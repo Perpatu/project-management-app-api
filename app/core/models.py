@@ -111,6 +111,7 @@ class Project(models.Model):
         default='In design',
         choices=ProjectStatus.choices
     )
+    name = models.CharField(max_length=255, blank=False)
     number = models.CharField(max_length=255, blank=False)
     order_number = models.CharField(max_length=255, blank=True)
     secretariat = models.BooleanField(default=True)
@@ -151,7 +152,7 @@ class Department(models.Model):
 class File(models.Model):
     """File model"""
     class Destiny(models.TextChoices):
-        PROJECT = 'Project'
+        PRODUCTION = 'Production'
         SECRETARIAT = 'Secretariat'
 
     def file_path(instance, filename):

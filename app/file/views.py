@@ -71,6 +71,22 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
             'merged': merged
         }
         return Response(result)
+    
+    @action(methods=['GET'], detail=False, url_path='detail-name')
+    def file_by_name(self, request):
+        """file by name add to params filed with name thaht contains file name """
+        name = self.request.query_params.get('name')
+        file = File.objects.get(name=name)
+        serializer = serializers.FileManageSerializer(file)
+        return Response(serializer.data)
+
+    @action(methods=['GET'], detail=False, url_path='secretariat')
+    def file_secretariat(self, request):
+        """get Secretariat files assinged to project params project_id"""
+        project = self.request.query_params.get('project')
+        file = File.objects.filter(project=project, destiny='Secretariat')
+        serializer = serializers.FileProjectSerializer(file, many=True)
+        return Response(serializer.data)
 
 
 class FileAuthViewSet(viewsets.GenericViewSet):
@@ -237,16 +253,16 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
                 logic.start = False
                 logic.paused = False
                 logic.save()
-        super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
 
         info = {'message': f'Queue logic with id \
                 {q_obj.id} has been updated'}
         project_progress(request_data['project'])
 
-        return Response(info)
+        return response
 
     def destroy(self, request, *args, **kwargs):
-        """Deleting logic and calculate project progress"""
+        """Delete logic and calculate project progress"""
         q_obj = self.get_object()
         file = File.objects.filter(id=q_obj.file.id).first()
         serializer_file = serializers.FileProjectSerializer(file, many=False)

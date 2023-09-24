@@ -27,7 +27,7 @@ class CommentProjectDisplaySerializer(serializers.ModelSerializer):
         last_name = UserNestedSerializer(instance.user).data['last_name']
         response['user'] = {
             'id': UserNestedSerializer(instance.user).data['id'],
-            'name': first_name + ' ' + last_name
+            'name': first_name[0].upper() + '. ' + last_name
         }
         return response
 
@@ -53,6 +53,7 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             'start',
             'deadline',
             'priority',
+            'name',
             'number',
             'order_number',
         ]
@@ -73,6 +74,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'progress',
             'priority',
             'status',
+            'name',
             'number',
             'order_number',
             'secretariat',
@@ -86,7 +88,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         last_name = UserNestedSerializer(instance.manager).data['last_name']
         response['manager'] = {
             'id': UserNestedSerializer(instance.manager).data['id'],
-            'name': first_name + ' ' + last_name
+            'name': first_name[0].upper() + '. ' + last_name
         }
         response['client'] = {
             'id': ClientNestedSerializer(instance.client).data['id'],

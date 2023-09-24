@@ -94,7 +94,7 @@ class ProjectAdminViewSet(mixins.CreateModelMixin,
     @action(methods=['GET'], detail=False, url_path='columns')
     def project_admin_columns(self, request):
         """Columns for admin"""
-        columns = ['number', 'order_number', 'start',
+        columns = ['name', 'number', 'order_number', 'start',
                    'deadline', 'status', 'progress',
                    'priority', 'manager', 'options']
         return Response(columns)
@@ -106,13 +106,23 @@ class ProjectAuthViewSet(mixins.RetrieveModelMixin,
     serializer_class = serializers.ProjectSerializer
     queryset = Project.objects.all()
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]    
 
     def get_serializer_class(self):
         """Return the serializer class for request."""
         if self.action == 'retrieve':
             return serializers.ProjectDetailSerializer
         return self.serializer_class
+    
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        data = response.data
+        new_files = []
+        for file in data['files']:
+            if file['destiny'] != 'Secretariat':
+                new_files.append(file)
+        data['files'] = new_files
+        return Response(data)
 
     @action(methods=['GET'], detail=False, url_path='status')
     def project_status_view(self, request):
