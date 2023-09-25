@@ -77,7 +77,7 @@ def search_projects(params, user):
         queryset = queryset.filter(manager=user)
 
     serializer = ProjectSerializer(queryset, many=True)
-    return Response(serializer.data)
+    return serializer.data
 
 
 def filter_production_projects(queryset, params, user=None):
@@ -101,13 +101,14 @@ def filter_production_projects(queryset, params, user=None):
         return Response(data)
 
     serializer = ProjectSerializer(queryset, many=True)
-    return Response(serializer.data)
+    return serializer.data
 
 
 def filter_secretariat_projects(queryset, params, user=None):
-    project_status = params.get('status')
-    status_filter = project_secretariat_status(project_status, user)
+    invoice_status = params.get('status')
+    status_filter = project_secretariat_status(invoice_status, user)
 
+    
     if status_filter is None:
         return Response({'message': 'There is no such project status'}, status=status.HTTP_404_NOT_FOUND)
     else:
@@ -115,11 +116,11 @@ def filter_secretariat_projects(queryset, params, user=None):
 
     status_paginate =  ['YES', 'YES (LACK OF INVOICE)']
 
-    if project_status in status_paginate:
+    if invoice_status in status_paginate:
         page_size = params.get('page_size')
         page_number = params.get('page_number')
         data = paginate(page_size, page_number, queryset)
         return Response(data)
 
     serializer = ProjectSerializer(queryset, many=True)
-    return Response(serializer.data)
+    return serializer.data
