@@ -30,7 +30,7 @@ class DepartmentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Department
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'order']
         read_only_fields = ['id']
 
 

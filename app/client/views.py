@@ -2,9 +2,11 @@
 Views for the client APIs.
 """
 from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser
-
+from .client_utils import search_client
 from core.models import Client
 from client import serializers
 
@@ -17,5 +19,20 @@ class ClientViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
 
     def perform_create(self, serializer):
-        """Create a new client"""
-        serializer.save()
+        return super().perform_create(serializer)
+    
+    @action(methods=['GET'], detail=False, url_path='columns')
+    def client_columns(self, request):
+        """Columns for client"""
+        columns = ['name', 'email',
+                   'phone', 'address',
+                   'date_add', 'options']
+        return Response(columns)
+    
+    @action(methods=['GET'], detail=False, url_path='search')
+    def client_search_view(self, request):
+        """Search client"""
+        params = self.request.query_params
+        response = search_client(params)
+        return response
+

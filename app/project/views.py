@@ -15,8 +15,9 @@ from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .project_utils import (
-    filter_projects,
-    search_projects
+    filter_production_projects,
+    search_projects,
+    filter_secretariat_projects
 )
 from core.models import (
     Project,
@@ -98,6 +99,23 @@ class ProjectAdminViewSet(mixins.CreateModelMixin,
                    'deadline', 'status', 'progress',
                    'priority', 'manager', 'options']
         return Response(columns)
+    
+    @action(methods=['GET'], detail=False, url_path='columns-secretariat')
+    def project_secretariat_columns(self, request):
+        """Columns for production project"""
+        columns = ['number', 'order_number', 'start',
+                   'deadline', 'progress', 'manager',
+                    'status', 'options']
+        return Response(columns)
+    
+    @action(methods=['GET'], detail=False, url_path='status-secretariat')
+    def project_secretiarat_status_view(self, request):
+        """Project view"""
+        user = request.user
+        params = self.request.query_params
+        
+        response = filter_secretariat_projects(self.queryset, params, user)
+        return response
 
 
 class ProjectAuthViewSet(mixins.RetrieveModelMixin,
@@ -125,15 +143,15 @@ class ProjectAuthViewSet(mixins.RetrieveModelMixin,
         return Response(data)
 
     @action(methods=['GET'], detail=False, url_path='status')
-    def project_status_view(self, request):
+    def project_production_status_view(self, request):
         """Project view"""
         user = request.user
         params = self.request.query_params
-        response = filter_projects(self.queryset, params, user)
-        return response
+        response = filter_production_projects(self.queryset, params, user)
+        return response   
 
     @action(methods=['GET'], detail=False, url_path='search')
-    def project_search_view(self, request):
+    def project_production_search_view(self, request):
         """Search project"""
         user = request.user
         params = self.request.query_params
@@ -141,12 +159,12 @@ class ProjectAuthViewSet(mixins.RetrieveModelMixin,
         return response
 
     @action(methods=['GET'], detail=False, url_path='columns')
-    def project_auth_columns(self, request):
-        """Columns for auth users"""
+    def project_production_columns(self, request):
+        """Columns for production project"""
         columns = ['number', 'order_number', 'start',
                    'deadline', 'status', 'progress',
                    'priority', 'manager']
-        return Response(columns)
+        return Response(columns)   
 
 
 class CommentProjectViewSet(mixins.CreateModelMixin,
