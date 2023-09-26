@@ -62,16 +62,18 @@ class ProjectAdminViewSet(
 
     @action(methods=['GET'], detail=False, url_path='columns')
     def project_admin_columns(self, request):
-        columns = ['name', 'number', 'order_number', 'start',
-                   'deadline', 'status', 'progress',
-                   'priority', 'manager', 'options']
+        columns = ['number', 'order_number', 'name',
+                   'client', 'start', 'deadline',
+                   'priority', 'progress', 'status', 
+                   'manager', 'options']
         return Response(columns)
 
     @action(methods=['GET'], detail=False, url_path='columns-secretariat')
     def project_secretariat_columns(self, request):
-        columns = ['number', 'order_number', 'start',
-                   'deadline', 'progress', 'manager',
-                   'status', 'options']
+        columns = ['number', 'order_number', 'name', 
+                   'client', 'start', 'deadline',
+                   'progress', 'manager', 'status',
+                   'options']
         return Response(columns)
 
     @action(methods=['GET'], detail=False, url_path='status-secretariat')
@@ -117,7 +119,7 @@ class ProjectAuthViewSet(
 
     @action(methods=['GET'], detail=False, url_path='columns')
     def project_production_columns(self, request):
-        columns = ['number', 'order_number', 'start',
+        columns = ['name', 'number', 'order_number', 'start',
                    'deadline', 'status', 'progress',
                    'priority', 'manager']
         return Response(columns)

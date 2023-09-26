@@ -44,16 +44,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         Employee = 'Employee'
 
     email = models.EmailField(max_length=255, unique=True)
-    name = models.CharField(max_length=255, blank=True)
+    name = models.CharField(max_length=255, unique=True, blank=False)
     role = models.CharField(max_length=20, choices=UserRole.choices)
-    first_name = models.CharField(max_length=255, blank=True)
-    last_name = models.CharField(max_length=255, blank=True)
+    password = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=255, blank=False)
+    last_name = models.CharField(max_length=255, blank=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'name'
 
 
 class Client(models.Model):

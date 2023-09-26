@@ -57,7 +57,7 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         return Response(info, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['GET'], detail=False, url_path='columns-manage')
-    def file_admin_mange_columns(self, request):
+    def file_mange_columns(self, request):
         """Columns for mange files"""
         deps = Department.objects.all()
         deps_ser = DepartmentSerializer(deps, many=True)
@@ -70,6 +70,12 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
             'departments': deps_ser.data,
             'merged': merged
         }
+        return Response(result)
+
+    @action(methods=['GET'], detail=False, url_path='columns-secretariat')
+    def file_secretariat_columns(self, request):
+        """Columns for secretariat files"""
+        result = ['view', 'name', 'comments', 'options']
         return Response(result)
     
     @action(methods=['GET'], detail=False, url_path='detail-name')

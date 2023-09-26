@@ -1,6 +1,8 @@
 """
 Views for the user API
 """
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework import generics, authentication, permissions
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
@@ -39,13 +41,28 @@ class ManagerUserView(mixins.ListModelMixin, generics.RetrieveUpdateAPIView):
 
 class UserViewSet(mixins.ListModelMixin,
                   viewsets.GenericViewSet):
-    """View for manage andmin project APIs"""
+    """View for users APIs"""
     serializer_class = UserSerializer
     queryset = User.objects.all()
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAdminUser]
 
-    def get_queryset(self):
-        if self.action == 'list':
-            return self.queryset.filter(is_staff=True)
-        return super().get_queryset()
+    @action(methods=['GET'], detail=False, url_path='admin')
+    def user_admin_view(self, request):
+        """Return admin users"""
+        queryset = self.queryset.filter(role='Admin')
+        serializer = UserSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(methods=['GET'], detail=False, url_path='not-admin')
+    def user_employee_view(self, request):
+        """Return employee users"""
+        queryset = self.queryset.filter(role='Employee')
+        serializer = UserSerializer(queryset, many=True)
+        return Response(serializer.data)    
+
+    @action(methods=['GET'], detail=False, url_path='columns')
+    def user_columns_view(self, request):
+        """Return columns users"""
+        data = ['name', 'email', 'role', 'options']
+        return Response(data)

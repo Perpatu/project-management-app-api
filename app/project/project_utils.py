@@ -44,8 +44,7 @@ def project_production_status(project_status, user=None):
 
 def project_secretariat_status(project_status, user=None):
     status_mapping = {
-        'YES': ['YES'],
-        'YES (LACK OF INVOICE)': ['YES (LACK OF INVOICE)'],
+        'YES': ['YES', 'YES (LACK OF INVOICE)'],
         'NO': ['NO'],
     }
 
@@ -98,10 +97,11 @@ def filter_production_projects(queryset, params, user=None):
         page_size = params.get('page_size')
         page_number = params.get('page_number')
         data = paginate(page_size, page_number, queryset)
-        return Response(data)
+        return data
 
     serializer = ProjectSerializer(queryset, many=True)
-    return serializer.data
+    data = serializer.data
+    return data
 
 
 def filter_secretariat_projects(queryset, params, user=None):
@@ -120,7 +120,8 @@ def filter_secretariat_projects(queryset, params, user=None):
         page_size = params.get('page_size')
         page_number = params.get('page_number')
         data = paginate(page_size, page_number, queryset)
-        return Response(data)
+        return data
 
     serializer = ProjectSerializer(queryset, many=True)
-    return serializer.data
+    data = serializer.data
+    return data

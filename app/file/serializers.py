@@ -52,10 +52,19 @@ class FilesUploadSerializer(serializers.ModelSerializer):
             file_split = file_name_str.split('.')
             file_extension = file_split[-1]
             if validate_file_extension(file_extension):
-                file_obj = File.objects.create(
-                    file=file, project=project, user=user,
-                    destiny=destiny, name=file.name
-                )
+                if destiny == 'Secretariat':
+                    file_new_list = file.name.split('.')
+                    file_new_list[-2] = f"{file_new_list[-2]}_s"
+                    file.name = '.'.join(file_new_list)
+                    file_obj = File.objects.create(
+                        file=file, project=project, user=user,
+                        destiny=destiny, name=file.name
+                    )
+                elif destiny == 'Production':
+                    file_obj = File.objects.create(
+                        file=file, project=project, user=user,
+                        destiny=destiny, name=file.name
+                    )
                 fileurl = f'{file_obj.name}'
                 file_list.append(fileurl)
             else:
