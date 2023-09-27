@@ -13,6 +13,7 @@ from rest_framework import (
 from core.models import User
 from user.serializers import (
     UserSerializer,
+    UserManageSerializer,
     AuthTokenSerializer
 )
 
@@ -30,7 +31,7 @@ class CreateTokenView(ObtainAuthToken):
 
 class ManagerUserView(mixins.ListModelMixin, generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""
-    serializer_class = UserSerializer
+    serializer_class = UserManageSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
