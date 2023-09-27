@@ -17,21 +17,21 @@ from phonenumber_field.modelfields import PhoneNumberField
 class UserManager(BaseUserManager):
     """Manager for user"""
 
-    def create_user(self, username, password=None, **extra_field):
+    def create_user(self, username, role, password=None, **extra_fields):
         """create, save and return a new user"""
         if not username:
             raise ValueError('User must have username')
         if not password:
             raise ValueError('User must have password')
-        user = self.model(username=username, **extra_field)
+        user = self.model(username=username, role=role, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
 
         return user
 
-    def create_superuser(self, username, password):
+    def create_superuser(self, username, password, role):
         """Create and return new superuser"""
-        user = self.create_user(username, password)
+        user = self.create_user(username=username, role=role, password=password)
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
@@ -56,7 +56,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['role', 'email']
+    REQUIRED_FIELDS = ['role']
 
 
 class Client(models.Model):

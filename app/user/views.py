@@ -31,7 +31,7 @@ class CreateTokenView(ObtainAuthToken):
 
 class ManagerUserView(mixins.ListModelMixin, generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""
-    serializer_class = UserManageSerializer
+    serializer_class = UserSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
@@ -65,5 +65,5 @@ class UserViewSet(mixins.ListModelMixin,
     @action(methods=['GET'], detail=False, url_path='columns')
     def user_columns_view(self, request):
         """Return columns users"""
-        data = ['name', 'email', 'role', 'options']
+        data = ['name', 'username', 'email', 'role', 'options']
         return Response(data)
