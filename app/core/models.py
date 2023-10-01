@@ -50,6 +50,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=20, choices=UserRole.choices)
     first_name = models.CharField(max_length=255, blank=False)
     last_name = models.CharField(max_length=255, blank=False)
+    phone_number = PhoneNumberField(blank=True)
+    address = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -57,6 +59,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['role']
+
+    class Meta:
+        ordering = ['last_name']
+        indexes = [
+            models.Index(fields=['last_name'])
+        ]
 
 
 class Client(models.Model):

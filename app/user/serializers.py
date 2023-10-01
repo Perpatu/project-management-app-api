@@ -15,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'email', 'password', 'username', 'first_name', 'last_name', 'role']
+        fields = ['id', 'email', 'password', 'username', 'first_name', 'last_name', 'phone_number', 'address', 'role']
         extra_kwargs = {'password': {'write_only': True, 'min_length': 5}}
 
     def create(self, validated_data):
@@ -26,7 +26,6 @@ class UserSerializer(serializers.ModelSerializer):
         """Update and return user"""
         password = validated_data.pop('password', None)
         user = super().update(instance, validated_data)
-        print('XDDDD')
         if password:
             user.set_password(password)
             user.save()

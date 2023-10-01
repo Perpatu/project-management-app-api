@@ -1,6 +1,7 @@
 """
 Views for the user API
 """
+from django.db.models import Q
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import generics, authentication, permissions
@@ -38,7 +39,7 @@ class ManagerUserView(mixins.ListModelMixin, generics.RetrieveUpdateAPIView):
     def get_object(self):
         """Retrieve and return the authenticated user"""
         return self.request.user
-    
+
 
 class UserViewSet(mixins.ListModelMixin,
                   viewsets.GenericViewSet):
@@ -60,10 +61,24 @@ class UserViewSet(mixins.ListModelMixin,
         """Return employee users"""
         queryset = self.queryset.filter(role='Employee')
         serializer = UserSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(methods=['GET'], detail=False, url_path='search')
+    def user_search_view(self, request):
+        """Search users using q param"""
+        query = self.request.query_params.get('q')
+        queryset = self.queryset.filter(
+            Q(username__icontains=query) |
+            Q(email__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(role__icontains=query))
+        serializer = UserSerializer(queryset, many=True)
         return Response(serializer.data)    
+
 
     @action(methods=['GET'], detail=False, url_path='columns')
     def user_columns_view(self, request):
         """Return columns users"""
-        data = ['name', 'username', 'email', 'role', 'options']
+        data = ['last_name', 'username', 'email', 'role', 'address', 'options']
         return Response(data)
