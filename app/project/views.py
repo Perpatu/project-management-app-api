@@ -119,9 +119,10 @@ class ProjectAuthViewSet(
 
     @action(methods=['GET'], detail=False, url_path='columns')
     def project_production_columns(self, request):
-        columns = ['name', 'number', 'order_number', 'start',
-                   'deadline', 'status', 'progress',
-                   'priority', 'manager']
+        columns = ['number', 'order_number', 'name',
+                   'client', 'start', 'deadline',
+                   'priority', 'progress', 'status', 
+                   'manager']
         return Response(columns)
 
 class CommentProjectViewSet(

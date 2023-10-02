@@ -71,4 +71,4 @@ class UserNestedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'name', 'first_name', 'last_name']
+        fields = ['id', 'username', 'first_name', 'last_name']
