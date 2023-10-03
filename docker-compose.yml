@@ -1,22 +1,7 @@
 version: "3.11"
 
 services:
-  db:
-    image: postgres:15-alpine
-    volumes:
-      - dev-db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=devdb
-      - POSTGRES_USER=devuser
-      - POSTGRES_PASSWORD=changename
-  
-  channels:
-    image: redis:7.2.0-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - dev-channels-data:/data/channels/data
-  
+
   app:
     build:
       context: .
@@ -34,12 +19,30 @@ services:
              python manage.py runserver 0.0.0.0:8000"
     environment:
       - DB_HOST=db
-      - DB_NAME=devdb
-      - DB_USER=devuser
-      - DB_PASS=changename
+      - DB_NAME=dbname
+      - DB_USER=rootuser
+      - DB_PASS=changeme
+      - DEBUG=1
     depends_on:
       - db
       - channels
+
+
+  channels:
+    image: redis:7.2.0-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - dev-channels-data:/data/channels/data
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=dbname
+      - POSTGRES_USER=rootuser
+      - POSTGRES_PASSWORD=changeme
 
 volumes:
   dev-db-data:
