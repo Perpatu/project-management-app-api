@@ -8,6 +8,4 @@ channels>=4.0.0,<4.1
 redis>=5.0.0,<5.1
 channels-redis>=4.1.0,<4.2
 drf-spectacular>=0.26.4,<0.27
-django-phonenumber-field>=7.1.0,<7.2
-django-phonenumbers>=1.0.1,<1.1
 Pillow>=10.0.0,<10.1.0

@@ -11,7 +11,6 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 from django.core.validators import MinValueValidator, MaxValueValidator
-from phonenumber_field.modelfields import PhoneNumberField
 
 
 class UserManager(BaseUserManager):
@@ -24,6 +23,8 @@ class UserManager(BaseUserManager):
         if not password:
             raise ValueError('User must have password')
         user = self.model(username=username, role=role, **extra_fields)
+        if role == 'Admin':
+            user.is_staff = True
         user.set_password(password)
         user.save(using=self._db)
 
@@ -50,7 +51,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=20, choices=UserRole.choices)
     first_name = models.CharField(max_length=255, blank=False)
     last_name = models.CharField(max_length=255, blank=False)
-    phone_number = PhoneNumberField(blank=True)
+    phone_number = models.CharField(max_length=12, blank=False)
     address = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -71,7 +72,7 @@ class Client(models.Model):
     """Client Model"""
     name = models.CharField(max_length=255, unique=True)
     email = models.EmailField(max_length=255, blank=True)
-    phone_number = PhoneNumberField(blank=True)
+    phone_number = models.CharField(max_length=12, blank=True)
     address = models.CharField(max_length=255, blank=True)
     date_add = models.DateField(auto_now_add=True)
     color = models.CharField(max_length=30, blank=True)

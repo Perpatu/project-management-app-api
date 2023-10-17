@@ -30,7 +30,7 @@ class CreateTokenView(ObtainAuthToken):
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
 
 
-class ManagerUserView(mixins.ListModelMixin, generics.RetrieveUpdateAPIView):
+class ManagerUserView(generics.RetrieveAPIView):
     """Manage the authenticated user"""
     serializer_class = UserSerializer
     authentication_classes = [authentication.TokenAuthentication]
@@ -48,6 +48,7 @@ class UserViewSet(mixins.ListModelMixin,
     queryset = User.objects.all()
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAdminUser]
+
 
     @action(methods=['GET'], detail=False, url_path='admin')
     def user_admin_view(self, request):
@@ -74,7 +75,7 @@ class UserViewSet(mixins.ListModelMixin,
             Q(last_name__icontains=query) |
             Q(role__icontains=query))
         serializer = UserSerializer(queryset, many=True)
-        return Response(serializer.data)    
+        return Response(serializer.data)
 
 
     @action(methods=['GET'], detail=False, url_path='columns')
@@ -82,3 +83,19 @@ class UserViewSet(mixins.ListModelMixin,
         """Return columns users"""
         data = ['last_name', 'username', 'email', 'role', 'address', 'options']
         return Response(data)
+
+
+class UserTestViewSet(mixins.UpdateModelMixin,
+                      mixins.DestroyModelMixin,
+                      viewsets.GenericViewSet):
+    """View for users APIs"""
+    serializer_class = UserManageSerializer
+    queryset = User.objects.all()
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAdminUser]
+
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)

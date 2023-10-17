@@ -55,8 +55,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'channels',
     'drf_spectacular',
-    'phonenumber_field',
-    'django_phonenumbers',
     'user',    
     'project',
     'file',

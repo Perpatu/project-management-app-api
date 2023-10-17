@@ -65,7 +65,8 @@ def search_projects(params, user):
     status_filter = project_production_status(status, user)
 
     if status_filter is None:
-        return Response({'message': 'There is no such project status or you do not have permission'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'There is no such project status or you do not have permission'},
+                        status=status.HTTP_404_NOT_FOUND)
 
     queryset = Project.objects.filter(
         Q(status__in=status_filter) &
@@ -74,6 +75,24 @@ def search_projects(params, user):
 
     if user and not user.is_staff and status.startswith('My'):
         queryset = queryset.filter(manager=user)
+
+    serializer = ProjectSerializer(queryset, many=True)
+    return serializer.data
+
+
+def search_secretariat_projects(params, user):
+    status = params.get('status')
+    search = params.get('search')
+    status_filter = project_secretariat_status(status, user)
+
+    if status_filter is None:
+        return Response({'message': 'There is no such project status or you do not have permission'},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    queryset = Project.objects.filter(
+        Q(invoiced__in=status_filter) & Q(secretariat=True) &
+        (Q(number__icontains=search) | Q(name__icontains=search) | Q(order_number__icontains=search))
+    )
 
     serializer = ProjectSerializer(queryset, many=True)
     return serializer.data
@@ -108,13 +127,12 @@ def filter_secretariat_projects(queryset, params, user=None):
     invoice_status = params.get('status')
     status_filter = project_secretariat_status(invoice_status, user)
 
-    
     if status_filter is None:
         return Response({'message': 'There is no such project status'}, status=status.HTTP_404_NOT_FOUND)
     else:
         queryset = queryset.filter(invoiced__in=status_filter, secretariat=True)
 
-    status_paginate =  ['YES', 'YES (LACK OF INVOICE)']
+    status_paginate = ['YES', 'YES (LACK OF INVOICE)']
 
     if invoice_status in status_paginate:
         page_size = params.get('page_size')

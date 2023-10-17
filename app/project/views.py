@@ -7,10 +7,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from .project_utils import filter_production_projects, search_projects, filter_secretariat_projects
+from .project_utils import filter_production_projects, search_projects, filter_secretariat_projects, \
+    search_secretariat_projects
 from core.models import Project, CommentProject
+from .serializers import ProjectProgressSerializer
 from app.settings import MEDIA_ROOT
 from project import serializers
+
 
 class ProjectAdminViewSet(
     mixins.CreateModelMixin,
@@ -28,7 +31,14 @@ class ProjectAdminViewSet(
             return serializers.ProjectCreateSerializer
         return self.serializer_class
 
+    def update(self, request, *args, **kwargs):
+        if 'status' in request.data and request.data['status'] == 'Completed':
+            request.data.update({'progress': 100})
+        return super().update(request, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
+        if request.data['status'] == 'Completed':
+            request.data.update({'progress': 100})
         response = super().create(request, *args, **kwargs)
 
         if response.status_code == status.HTTP_201_CREATED:
@@ -64,13 +74,13 @@ class ProjectAdminViewSet(
     def project_admin_columns(self, request):
         columns = ['number', 'order_number', 'name',
                    'client', 'start', 'deadline',
-                   'priority', 'progress', 'status', 
+                   'priority', 'progress', 'status',
                    'manager', 'options']
         return Response(columns)
 
     @action(methods=['GET'], detail=False, url_path='columns-secretariat')
     def project_secretariat_columns(self, request):
-        columns = ['number', 'order_number', 'name', 
+        columns = ['number', 'order_number', 'name',
                    'client', 'start', 'deadline',
                    'progress', 'manager', 'status',
                    'options']
@@ -82,6 +92,14 @@ class ProjectAdminViewSet(
         params = self.request.query_params
         data = filter_secretariat_projects(self.queryset, params, user)
         return Response(data)
+
+    @action(methods=['GET'], detail=False, url_path='search-secretariat')
+    def project_secretariat_search_view(self, request):
+        user = request.user
+        params = self.request.query_params
+        data = search_secretariat_projects(params, user)
+        return Response(data)
+
 
 class ProjectAuthViewSet(
     mixins.RetrieveModelMixin,
@@ -121,9 +139,17 @@ class ProjectAuthViewSet(
     def project_production_columns(self, request):
         columns = ['number', 'order_number', 'name',
                    'client', 'start', 'deadline',
-                   'priority', 'progress', 'status', 
+                   'priority', 'progress', 'status',
                    'manager']
         return Response(columns)
+
+    @action(methods=['GET'], detail=True, url_path='progress')
+    def project_progress(self, request, pk=None):
+        project = self.get_object()
+        serializer = ProjectProgressSerializer(project)
+        data = serializer.data
+        return Response(data)
+
 
 class CommentProjectViewSet(
     mixins.CreateModelMixin,

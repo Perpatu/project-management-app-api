@@ -42,9 +42,10 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         file_path = MEDIA_ROOT + '/' + str(file.file)
         os.remove(file_path)
         file_data = serializers.FileProjectSerializer(file).data
+        super().destroy(request, *args, **kwargs)
         if len(file_data['queue']) > 0:
             project_progress(file_data['queue'][0]['project'])
-        return super().destroy(request, *args, **kwargs)
+        return Response({'File has been deleted'})
 
     def create(self, request, *args, **kwargs):
         """Create file object"""
@@ -77,18 +78,19 @@ class FileAdminViewSet(mixins.DestroyModelMixin,
         """Columns for secretariat files"""
         result = ['view', 'name', 'comments', 'options']
         return Response(result)
-    
+
     @action(methods=['GET'], detail=False, url_path='detail-name')
     def file_by_name(self, request):
-        """file by name add to params filed with name thaht contains file name """
+        """file by name add to params name=filename project=project_id """
         name = self.request.query_params.get('name')
-        file = File.objects.get(name=name)
+        project = self.request.query_params.get('project')
+        file = File.objects.get(name=name, project=project)
         serializer = serializers.FileManageSerializer(file)
         return Response(serializer.data)
 
     @action(methods=['GET'], detail=False, url_path='secretariat')
     def file_secretariat(self, request):
-        """get Secretariat files assinged to project params project_id"""
+        """get Secretariat files assigned to project params project_id"""
         project = self.request.query_params.get('project')
         file = File.objects.filter(project=project, destiny='Secretariat')
         serializer = serializers.FileProjectSerializer(file, many=True)
@@ -157,12 +159,7 @@ class QueueLogicViewSet(mixins.CreateModelMixin,
     queryset = QueueLogic.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminUser]
-    
-    """def get_permissions(self):
-        if self.action == 'update' or self.request.method == 'PATCH':
-            return [IsAuthenticated()]
-        else:
-            return [IsAdminUser()]"""
+
 
     def get_permissions(self):
         if self.action == 'update' or self.request.method == 'PATCH':

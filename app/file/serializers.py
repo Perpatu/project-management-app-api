@@ -136,6 +136,13 @@ class FileProjectSerializer(serializers.ModelSerializer):
         model = File
         fields = ['id', 'name', 'file', 'comments', 'queue', 'destiny', 'new']
         read_only_fields = ['id']
+    
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        response['dep_id'] = []
+        for q in response['queue']:
+            response['dep_id'].append(q['department'])
+        return response
 
 
 class TestSerializer(serializers.ModelSerializer):

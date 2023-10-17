@@ -15,6 +15,12 @@ router.register(
     basename=''
 )
 
+router.register(
+    'manage',
+    views.UserTestViewSet,
+    basename='manage'
+)
+
 
 app_name = 'user'
 

@@ -56,6 +56,7 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             'name',
             'number',
             'order_number',
+            'status',
         ]
         read_only_fields = ['id']
 
@@ -88,7 +89,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         last_name = UserNestedSerializer(instance.manager).data['last_name']
         response['manager'] = {
             'id': UserNestedSerializer(instance.manager).data['id'],
-            'name': first_name[0].upper() + '. ' + last_name
+            'username': first_name[0].upper() + '. ' + last_name
         }
         response['client'] = {
             'id': ClientNestedSerializer(instance.client).data['id'],
@@ -112,3 +113,4 @@ class ProjectProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'progress', 'status']
+
