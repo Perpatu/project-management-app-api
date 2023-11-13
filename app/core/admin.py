@@ -22,7 +22,8 @@ class UserAdmin(BaseUserAdmin):
                     'is_active',
                     'is_staff',
                     'is_superuser',
-                    'role'
+                    'role',
+                    'departments'
                 )
             }
         ),
@@ -33,6 +34,7 @@ class UserAdmin(BaseUserAdmin):
                     'username',
                     'first_name',
                     'last_name',
+                    'status'
                 )
             }
         ),
@@ -47,6 +49,7 @@ class UserAdmin(BaseUserAdmin):
                 'password1',
                 'password2',
                 'username',
+                'departments',
                 'is_active',
                 'is_staff',
                 'is_superuser',
@@ -63,3 +66,5 @@ admin.site.register(models.CommentFile)
 admin.site.register(models.File)
 admin.site.register(models.QueueLogic)
 admin.site.register(models.Department)
+admin.site.register(models.NotificationTask)
+admin.site.register(models.NotificationProject)

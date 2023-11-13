@@ -7,9 +7,11 @@ from core.models import (
     File,
     Project,
     CommentFile,
-    QueueLogic
+    QueueLogic,
+    NotificationTask
 )
 from user.serializers import UserNestedSerializer
+from department.serializers import DepartmentSerializer
 
 
 def validate_file_extension(file_extension):
@@ -72,12 +74,21 @@ class FilesUploadSerializer(serializers.ModelSerializer):
         return file_list
 
 
+class FileManageSerializer(serializers.ModelSerializer):
+    """Serializer for manage file"""
+
+    class Meta:
+        model = File
+        fields = ['id', 'name', 'file', 'destiny', 'queue']
+        read_only_fields = ['id']
+
+
 class CommentFileDisplaySerializer(serializers.ModelSerializer):
     """Serializer for comment project"""
 
     class Meta:
         model = CommentFile
-        fields = ['id', 'user', 'text', 'date_posted', 'read']
+        fields = ['id', 'user', 'text', 'file', 'date_posted', 'read']
         read_only_fields = ['id', 'user', 'date_posted']
 
     def to_representation(self, instance):
@@ -87,6 +98,10 @@ class CommentFileDisplaySerializer(serializers.ModelSerializer):
         response['user'] = {
             'id': UserNestedSerializer(instance.user).data['id'],
             'name': first_name[0].upper() + '. ' + last_name
+        }
+        response['file'] = {
+            'id': FileManageSerializer(instance.file).data['id'],
+            'destiny': FileManageSerializer(instance.file).data['destiny']
         }
         return response
 
@@ -120,6 +135,7 @@ class QueueLogicManageSerializer(serializers.ModelSerializer):
 
 class QueueLogicToFileSerializer(serializers.ModelSerializer):
     """Serializer for queue logic in File"""
+    users = UserNestedSerializer(many=True)
 
     class Meta:
         model = QueueLogic
@@ -134,9 +150,13 @@ class FileProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ['id', 'name', 'file', 'comments', 'queue', 'destiny', 'new']
+        fields = [
+            'id', 'name', 'file',
+            'project', 'comments',
+            'queue', 'destiny', 'new'
+        ]
         read_only_fields = ['id']
-    
+
     def to_representation(self, instance):
         response = super().to_representation(instance)
         response['dep_id'] = []
@@ -158,7 +178,7 @@ class ProjectFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'manager']
+        fields = ['id', 'manager', 'number']
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
@@ -169,12 +189,20 @@ class ProjectFileSerializer(serializers.ModelSerializer):
         return response
 
 
-class FileManageSerializer(serializers.ModelSerializer):
-    """Serializer for manage file"""
+class QueueLogicCalendarSerializer(serializers.ModelSerializer):
+    """Serializer for task user in calendar"""
+
+    project = ProjectFileSerializer(many=False)
+    department = DepartmentSerializer(many=False)
+    file = FileManageSerializer(many=False)
 
     class Meta:
-        model = File
-        fields = ['id', 'name', 'file', 'destiny', 'queue']
+        model = QueueLogic
+        fields = [
+            'id', 'file', 'department',
+            'project', 'users', 'planned_start_date',
+            'planned_end_date', 'start', 'paused', 'end'
+        ]
         read_only_fields = ['id']
 
 
@@ -190,11 +218,38 @@ class FileDepartmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def to_representation(self, instance):
-        response = super().to_representation(instance)
+        response = super().to_representation(instance)        
         dep_id = self.context.get('dep_id')
+        departments = [q['department'] for q in response['queue']]
+        dep_index = departments.index(dep_id)
+
         filtered_queue = [
-            queue_data for queue_data in response['queue']
+            {
+                **queue_data,
+                'next_task': next((q for q in response['queue'] if q['department'] > queue_data['department']), 'lack'),
+                'prev_task': next((q for q in response['queue'] if q['department'] < queue_data['department']), 'lack')
+            }
+            for queue_data in response['queue']
             if queue_data['department'] == dep_id
         ]
+
+        if filtered_queue:
+            dep_index = departments.index(dep_id)
+            if dep_index > 0:
+                filtered_queue[0]['prev_task'] = next((q for q in response['queue'] if q['department'] == departments[dep_index - 1]), 'lack')
+            if dep_index < len(departments) - 1:
+                filtered_queue[0]['next_task'] = next((q for q in response['queue'] if q['department'] == departments[dep_index + 1]), 'lack')
+
         response['queue'] = filtered_queue
         return response
+
+
+class NotificationTaskSerializer(serializers.ModelSerializer):
+    """Serializer for NotificationTask"""
+
+    department = DepartmentSerializer(many=False)
+
+    class Meta:
+        model = NotificationTask
+        fields = '__all__'
+        read_only_fields = ['id']

@@ -8,7 +8,10 @@ def search_client(params):
     search = params.get('q')
 
     queryset = Client.objects.filter(
-        (Q(name__icontains=search) | Q(email__icontains=search) | Q(phone_number__icontains=search) | Q(address__icontains=search))
+        (Q(name__icontains=search) |
+         Q(email__icontains=search) |
+         Q(phone_number__icontains=search) |
+         Q(address__icontains=search))
     )
 
     serializer = ClientSerializer(queryset, many=True)

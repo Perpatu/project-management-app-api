@@ -15,8 +15,10 @@ from core.models import User
 from user.serializers import (
     UserSerializer,
     UserManageSerializer,
-    AuthTokenSerializer
+    AuthTokenSerializer,
+    UserBoardSerializer
 )
+from file.file_utils import check_all_user_status
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -49,7 +51,13 @@ class UserViewSet(mixins.ListModelMixin,
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAdminUser]
 
-
+    def get_serializer_class(self):
+        """Return the serializer class for request."""
+        if self.action == 'list':
+            return UserBoardSerializer
+        return super().get_serializer_class()
+    
+    
     @action(methods=['GET'], detail=False, url_path='admin')
     def user_admin_view(self, request):
         """Return admin users"""
@@ -61,6 +69,15 @@ class UserViewSet(mixins.ListModelMixin,
     def user_employee_view(self, request):
         """Return employee users"""
         queryset = self.queryset.filter(role='Employee')
+        serializer = UserSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(methods=['GET'], detail=False, url_path='assigned')
+    def user_employee_assigned_department_view(self, request):
+        """Return employee users assigned to department"""
+        check_all_user_status()
+        dep_id = self.request.query_params.get('dep_id')
+        queryset = self.queryset.filter(role='Employee', departments__in=dep_id)
         serializer = UserSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -77,11 +94,10 @@ class UserViewSet(mixins.ListModelMixin,
         serializer = UserSerializer(queryset, many=True)
         return Response(serializer.data)
 
-
     @action(methods=['GET'], detail=False, url_path='columns')
     def user_columns_view(self, request):
         """Return columns users"""
-        data = ['last_name', 'username', 'email', 'role', 'address', 'options']
+        data = ['last_name', 'status', 'username', 'email', 'role', 'address', 'departments', 'options']
         return Response(data)
 
 
@@ -89,7 +105,7 @@ class UserTestViewSet(mixins.UpdateModelMixin,
                       mixins.DestroyModelMixin,
                       viewsets.GenericViewSet):
     """View for users APIs"""
-    serializer_class = UserManageSerializer
+    serializer_class = UserSerializer
     queryset = User.objects.all()
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAdminUser]

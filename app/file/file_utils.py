@@ -1,16 +1,29 @@
 import math
 from django.core.paginator import Paginator
 from project.serializers import ProjectProgressSerializer
-from department.serializers import DepartmentSerializer
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from file import serializers
+from department.serializers import DepartmentSerializer
+from file.serializers import FileDepartmentSerializer
 from core.models import (
     Project,
     QueueLogic,
     File,
-    Department
+    Department,
+    NotificationTask,
+    User,
+    CommentFile
 )
 from rest_framework.response import Response
 from rest_framework import status
+from datetime import datetime, timezone, timedelta
+
+
+def get_file_project_data(file_id):
+    file = File.objects.filter(id=file_id).first()
+    serializer_file = serializers.FileProjectSerializer(file, many=False)
+    return serializer_file.data
 
 
 def get_queue_status(queue_status):
@@ -68,13 +81,12 @@ def project_progress(project_id):
     serializer = ProjectProgressSerializer(project, data=data)
     if serializer.is_valid():
         serializer.save()
-    info = {'message': serializer.errors, 'status': False}
-    return Response(info, status=status.HTTP_400_BAD_REQUEST)
 
 
-def filter_files(params):
-    queue_status = params.get('status')
+def filter_files(params, user):
     dep_id = params.get('dep_id')
+    queue_status = params.get('status')
+    
     status_filter = get_queue_status(queue_status)
 
     if status_filter is None:
@@ -88,10 +100,17 @@ def filter_files(params):
     department = serializer_dep.data
 
     if status_filter:
-        query_file = File.objects.filter(
-            queue__department=int(dep_id),
-            queue__end=False
-        )
+        if user.role == 'Employee':        
+            query_file = File.objects.filter(
+                queue__department=int(dep_id),
+                queue__users__in=[user.id],
+                queue__end=False
+            )
+        else:
+            query_file = File.objects.filter(
+                queue__department=int(dep_id),
+                queue__end=False
+            )
         context = {'dep_id': int(dep_id)}
         serializer_file = serializers.FileDepartmentSerializer(
             query_file,
@@ -152,3 +171,178 @@ def search_files(params):
         'files': files
     }
     return data
+
+
+def notification_ws(data):
+    dep = Department.objects.get(id=data['department'])
+    file = File.objects.get(id=data['file'])
+    users = User.objects.all()
+    content = f'New Task ({file}) appeared in {dep}'
+
+    for user in users:
+        notification = NotificationTask(
+            user=user,
+            department=dep,
+            file=file,
+            content=content,
+            type='task'
+        )
+        notification.save()
+
+        noti_ser = serializers.NotificationTaskSerializer(
+            notification,
+            many=False
+        )
+        message = {
+            'data': noti_ser.data,
+        }
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'user_task_noti_{user.id}',
+            {
+                'type': 'task_noti',
+                'message': message,
+            }
+        )
+
+
+def task(data, users, where):
+    project_progress(data['project'])
+    project = Project.objects.get(id=data['project'])
+    serializer = ProjectProgressSerializer(project, many=False)
+    message = {
+        'file': data,
+        'project': serializer.data,
+        'type': 'task'
+    }
+    for user in users:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'user_file_modify_{where}_{user.id}',
+        {
+            'type': f'task_modify_{where}',
+            'message': message,
+            }
+        )
+
+
+def comment(comment_id, users, destiny, where):
+    comment = CommentFile.objects.get(id=comment_id)
+    comment_ser = serializers.CommentFileDisplaySerializer(
+        comment,
+        many=False
+    )
+    comment_data = comment_ser.data
+    message = {
+        'comment': comment_data,
+        'type': destiny,
+    }
+    for user in users:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'user_file_modify_{where}_{user.id}',
+            {
+                'type': f'task_modify_{where}',
+                'message': message,
+            }
+        )
+
+def file_delete(data, users, where):
+    message = {
+        'file': data,
+        'type': 'file_delete'
+    }
+    for user in users:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'user_file_modify_{where}_{user.id}',
+            {
+                'type': f'task_modify_{where}',
+                'message': message,
+            }
+        )
+
+
+def update_task_project_ws(data, destiny):
+    """Refresh task for file and progress for project in project view"""
+    users = User.objects.all()
+
+    if destiny == 'task':
+        task(data, users, 'project')
+
+    elif destiny == 'comment_add' or destiny == 'comment_delete':
+        comment(data, users, destiny, 'project')
+        
+    elif destiny == 'file_delete':
+        file_delete(data, users, 'project')
+
+
+def update_task_department_ws(data, destiny):
+    """Refresh task for file in department view"""
+
+    users = User.objects.all()
+
+    if destiny == 'task':
+        query = File.objects.get(id=data['id'])
+        try:
+            dep_id = data['queue'][0]['department']
+            context = {'dep_id': dep_id}
+            serializer_file = serializers.FileDepartmentSerializer(
+                query,
+                context=context
+            )
+            file_data = serializer_file.data
+            file_data['project'] = serializer_file.data['project']['id']
+            task(file_data, users, 'department')
+        except IndexError:
+            pass       
+    
+    elif destiny == 'comment_add' or destiny == 'comment_delete':
+        comment(data, users, destiny, 'department')
+       
+    elif destiny == 'file_delete':
+        file_delete(data, users, 'department')
+
+
+def is_current_date_in_range(start, end):
+    current_date = datetime.now(timezone.utc)
+    return start <= current_date <= end
+
+
+def check_user_status(user_id):
+    query = QueueLogic.objects.filter(users__in=[user_id], end=False)
+    serializer = serializers.QueueLogicCalendarSerializer(query, many=True)
+    data = serializer.data
+    results = []
+    for obj in data:
+        start_date = datetime.fromisoformat(obj['planned_start_date'])
+        end_date = datetime.fromisoformat(obj['planned_end_date'])
+        results.append(is_current_date_in_range(start_date, end_date))
+
+    user = User.objects.get(id=user_id)
+    if True in results:        
+        user.status = 'Busy'
+        user.save()
+    else:
+        user.status = 'Free'
+        user.save()
+
+def check_all_user_status():
+    users = User.objects.filter(role='Employee')
+    for user in users:
+        query = QueueLogic.objects.filter(users__in=[user.id], end=False)
+        serializer = serializers.QueueLogicCalendarSerializer(query, many=True)
+        data = serializer.data
+        results = []
+        for obj in data:
+            start_date = datetime.fromisoformat(obj['planned_start_date'])
+            end_date = datetime.fromisoformat(obj['planned_end_date'])
+            results.append(is_current_date_in_range(start_date, end_date))
+
+        #user = User.objects.get(id=user_id)
+        if True in results:        
+            user.status = 'Busy'
+            user.save()
+        else:
+            user.status = 'Free'
+            user.save()

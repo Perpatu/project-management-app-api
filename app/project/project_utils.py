@@ -1,7 +1,16 @@
 from rest_framework.response import Response
 from rest_framework import status
-from core.models import Project
-from project.serializers import ProjectSerializer
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from core.models import (
+    Project,
+    NotificationProject,
+    User
+)
+from project.serializers import (
+    ProjectSerializer,
+    NotificationProjectSerializer
+)
 from django.core.paginator import Paginator
 from django.db.models import Q
 
@@ -65,12 +74,17 @@ def search_projects(params, user):
     status_filter = project_production_status(status, user)
 
     if status_filter is None:
-        return Response({'message': 'There is no such project status or you do not have permission'},
-                        status=status.HTTP_404_NOT_FOUND)
+        info = {
+            'message': 'There is no such project status '
+                       'or you do not have permission'
+        }
+        return Response(info, status=status.HTTP_404_NOT_FOUND)
 
     queryset = Project.objects.filter(
         Q(status__in=status_filter) &
-        (Q(number__icontains=search) | Q(name__icontains=search) | Q(order_number__icontains=search))
+        (Q(number__icontains=search) |
+         Q(name__icontains=search) |
+         Q(order_number__icontains=search))
     )
 
     if user and not user.is_staff and status.startswith('My'):
@@ -86,12 +100,18 @@ def search_secretariat_projects(params, user):
     status_filter = project_secretariat_status(status, user)
 
     if status_filter is None:
-        return Response({'message': 'There is no such project status or you do not have permission'},
-                        status=status.HTTP_404_NOT_FOUND)
+        info = {
+            'message': 'There is no such project status '
+                       'or you do not have permission'
+        }
+        return Response(info, status=status.HTTP_404_NOT_FOUND)
 
     queryset = Project.objects.filter(
-        Q(invoiced__in=status_filter) & Q(secretariat=True) &
-        (Q(number__icontains=search) | Q(name__icontains=search) | Q(order_number__icontains=search))
+        Q(invoiced__in=status_filter) &
+        Q(secretariat=True) &
+        (Q(number__icontains=search) |
+         Q(name__icontains=search) |
+         Q(order_number__icontains=search))
     )
 
     serializer = ProjectSerializer(queryset, many=True)
@@ -103,14 +123,16 @@ def filter_production_projects(queryset, params, user=None):
     status_filter = project_production_status(project_status, user)
 
     if status_filter is None:
-        return Response({'message': 'There is no such project status'}, status=status.HTTP_404_NOT_FOUND)
+        info = {'message': 'There is no such project status'}
+        return Response(info, status=status.HTTP_404_NOT_FOUND)
 
     if status_filter and project_status.startswith('My'):
         queryset = queryset.filter(manager=user, status__in=status_filter)
     else:
         queryset = queryset.filter(status__in=status_filter)
 
-    status_paginate = ['Completed', 'Suspended', 'My Suspended', 'My Completed']
+    status_paginate = ['Completed', 'Suspended',
+                       'My Suspended', 'My Completed']
 
     if project_status in status_paginate:
         page_size = params.get('page_size')
@@ -128,9 +150,13 @@ def filter_secretariat_projects(queryset, params, user=None):
     status_filter = project_secretariat_status(invoice_status, user)
 
     if status_filter is None:
-        return Response({'message': 'There is no such project status'}, status=status.HTTP_404_NOT_FOUND)
+        info = {'message': 'There is no such project status'}
+        return Response(info, status=status.HTTP_404_NOT_FOUND)
     else:
-        queryset = queryset.filter(invoiced__in=status_filter, secretariat=True)
+        queryset = queryset.filter(
+            invoiced__in=status_filter,
+            secretariat=True
+        )
 
     status_paginate = ['YES', 'YES (LACK OF INVOICE)']
 
@@ -143,3 +169,52 @@ def filter_secretariat_projects(queryset, params, user=None):
     serializer = ProjectSerializer(queryset, many=True)
     data = serializer.data
     return data
+
+
+def send_message(group, type, message):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        group,
+        {
+            'type': type,
+            'message': message,
+        }
+    )
+
+
+def notification_ws(data):
+    project = Project.objects.get(id=data['id'])
+    users = User.objects.all()
+    content = f'Project ({project}) has been added'
+
+    for user in users:
+        notification = NotificationProject(
+            user=user,
+            project=project,
+            content=content,
+            type='project'
+        )
+        notification.save()
+
+        noti_ser = NotificationProjectSerializer(notification, many=False)
+        message = {
+            'data': noti_ser.data,
+        }
+        group = f'user_project_noti_{user.id}'
+        type = 'project_noti'
+        send_message(group, type, message)
+
+
+def manage_project_ws(data, destiny):
+    users = User.objects.all()
+
+    for user in users:
+        message = {
+            'data': data,
+            'type': destiny
+        }
+        group = f'project_manage_{user.id}'
+        type = 'project_manage'
+        send_message(group, type, message)
+
+

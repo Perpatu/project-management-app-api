@@ -20,19 +20,18 @@ class ClientViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         return super().perform_create(serializer)
-    
+
     @action(methods=['GET'], detail=False, url_path='columns')
     def client_columns(self, request):
         """Columns for client"""
         columns = ['name', 'email',
                    'phone', 'address',
-                   'date_add', 'options']
+                   'date_add', 'color', 'options']
         return Response(columns)
-    
+
     @action(methods=['GET'], detail=False, url_path='search')
     def client_search_view(self, request):
         """Search client"""
         params = self.request.query_params
         response = search_client(params)
         return response
-

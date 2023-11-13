@@ -9,6 +9,7 @@ from client.serializers import ClientNestedSerializer
 from core.models import (
     Project,
     CommentProject,
+    NotificationProject
 )
 from file.serializers import FileProjectSerializer
 
@@ -53,12 +54,27 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
             'start',
             'deadline',
             'priority',
+            'progress',
             'name',
             'number',
             'order_number',
             'status',
         ]
         read_only_fields = ['id']
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        first_name = UserNestedSerializer(instance.manager).data['first_name']
+        last_name = UserNestedSerializer(instance.manager).data['last_name']
+        response['manager'] = {
+            'id': UserNestedSerializer(instance.manager).data['id'],
+            'name': first_name[0].upper() + '. ' + last_name
+        }
+        response['client'] = {
+            'id': ClientNestedSerializer(instance.client).data['id'],
+            'name': ClientNestedSerializer(instance.client).data['name'],
+            'color': ClientNestedSerializer(instance.client).data['color'],
+        }
+        return response
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -80,6 +96,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'order_number',
             'secretariat',
             'invoiced',
+            'company'
         ]
         read_only_fields = ['id']
 
@@ -89,11 +106,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         last_name = UserNestedSerializer(instance.manager).data['last_name']
         response['manager'] = {
             'id': UserNestedSerializer(instance.manager).data['id'],
-            'username': first_name[0].upper() + '. ' + last_name
+            'name': first_name[0].upper() + '. ' + last_name
         }
         response['client'] = {
             'id': ClientNestedSerializer(instance.client).data['id'],
             'name': ClientNestedSerializer(instance.client).data['name'],
+            'color': ClientNestedSerializer(instance.client).data['color'],
         }
         return response
 
@@ -114,3 +132,11 @@ class ProjectProgressSerializer(serializers.ModelSerializer):
         model = Project
         fields = ['id', 'progress', 'status']
 
+
+class NotificationProjectSerializer(serializers.ModelSerializer):
+    """Serializer for NotificationTask"""
+
+    class Meta:
+        model = NotificationProject
+        fields = '__all__'
+        read_only_fields = ['id']

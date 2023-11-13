@@ -20,5 +20,5 @@ class ClientNestedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'color']
         read_only_fields = ['id']

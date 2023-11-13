@@ -31,6 +31,11 @@ router.register(
     views.QueueLogicViewSet,
     basename='queue-logic'
 )
+router.register(
+    'notification',
+    views.NotificationsTaskView,
+    basename='notification'
+)
 
 app_name = 'file'
 

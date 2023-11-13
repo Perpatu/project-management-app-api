@@ -28,6 +28,11 @@ router.register(
     views.CommentProjectViewSet,
     basename='comments'
 )
+router.register(
+    'notification',
+    views.NotificationsProjectView,
+    basename='notification'
+)
 
 app_name = 'project'
 
